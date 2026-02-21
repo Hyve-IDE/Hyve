@@ -1,0 +1,5 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij.mcpServer">
+    <mcpToolset implementation="com.hyve.knowledge.mcp.HytaleKnowledgeToolset"/>
+  </extensions>
+</idea-plugin>

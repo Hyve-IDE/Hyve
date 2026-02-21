@@ -1,0 +1,93 @@
+<idea-plugin package="com.hyve.ui">
+  <id>com.hyve.ui</id>
+  <name>Hyve UI Editor</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+
+  <description><![CDATA[
+    <p>
+    Visual UI editor for Hytale .ui files.
+    Design game interfaces with drag-and-drop simplicity.
+    </p>
+    <p>
+    Features:
+    <ul>
+      <li>Visual canvas for editing UI layouts</li>
+      <li>Property inspector for element configuration</li>
+      <li>Element hierarchy tree view</li>
+      <li>Undo/redo support</li>
+      <li>Theme-aware design matching Hyve IDE</li>
+    </ul>
+    </p>
+  ]]></description>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <module name="intellij.platform.compose"/>
+    <plugin id="com.hyve.common"/>
+  </dependencies>
+
+  <resource-bundle>messages.HyveUIBundle</resource-bundle>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Register .ui file type -->
+    <fileType
+        name="Hytale UI"
+        language="HytaleUI"
+        implementationClass="com.hyve.ui.HyveUIFileType"
+        fieldName="INSTANCE"
+        extensions="ui"/>
+
+    <!-- Register text/visual editor with toggle for .ui files -->
+    <fileEditorProvider
+        implementation="com.hyve.ui.editor.HyveUITextEditorWithPreviewProvider"/>
+
+    <!-- Project service for managing editor state -->
+    <projectService
+        serviceImplementation="com.hyve.ui.service.HyveUIProjectService"/>
+
+    <!-- Notification group -->
+    <notificationGroup
+        id="Hyve UI Editor"
+        displayType="BALLOON"
+        isLogByDefault="true"/>
+
+  </extensions>
+
+  <actions>
+    <group id="HyveUIMenu" text="Hyve UI" popup="true">
+      <add-to-group group-id="MainMenu" anchor="before" relative-to-action="HelpMenu"/>
+
+      <action
+          id="HyveUI.NewUIFile"
+          class="com.hyve.ui.actions.NewUIFileAction"
+          text="New UI File"
+          description="Create a new Hytale UI file"
+          icon="AllIcons.FileTypes.Xml">
+        <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift U"/>
+      </action>
+
+      <action
+          id="HyveUI.OpenInTextEditor"
+          class="com.hyve.ui.actions.OpenInTextEditorAction"
+          text="Open in Text Editor"
+          description="Open current .ui file in text editor"/>
+    </group>
+
+    <!-- Context menu action for .ui files -->
+    <action
+        id="HyveUI.OpenInVisualEditor"
+        class="com.hyve.ui.actions.OpenInVisualEditorAction"
+        text="Open in Visual Editor"
+        description="Open .ui file in visual editor">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="EditSource"/>
+    </action>
+  </actions>
+
+  <!-- Application-level listeners -->
+  <applicationListeners>
+    <listener
+        class="com.hyve.ui.editor.HyveUIEditorSaveHandler"
+        topic="com.intellij.openapi.fileEditor.FileDocumentManagerListener"/>
+  </applicationListeners>
+</idea-plugin>

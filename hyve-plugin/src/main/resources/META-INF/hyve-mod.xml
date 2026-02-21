@@ -1,0 +1,8 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <moduleBuilder builderClass="com.hyve.mod.HytaleModuleBuilder"/>
+    <spellchecker.bundledDictionaryProvider implementation="com.hyve.mod.HytaleBundledDictionaryProvider"/>
+    <configurationType implementation="com.hyve.mod.run.HytaleServerConfigurationType"/>
+    <configurationType implementation="com.hyve.mod.run.HytaleBuildConfigurationType"/>
+  </extensions>
+</idea-plugin>

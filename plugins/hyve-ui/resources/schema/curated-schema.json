@@ -1,0 +1,576 @@
+{
+  "version": "1.1.0",
+  "sourceFiles": 0,
+  "totalElements": 0,
+  "uniqueElementTypes": 36,
+  "discoveredAt": "2026-02-17T00:00:00Z",
+  "elements": [
+    {
+      "type": "Group",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 1261,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 1227, "observedValues": []},
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 1042, "observedValues": ["Top", "Left", "Right", "Bottom", "Center", "Full", "TopScrolling", "BottomScrolling", "LeftScrolling", "CenterMiddle", "LeftCenterWrap"]},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 607, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 307, "observedValues": ["1"]},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 227, "observedValues": []},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 166, "observedValues": ["true", "false"]},
+        {"name": "ScrollbarStyle", "type": "TUPLE", "required": false, "occurrences": 68, "observedValues": []},
+        {"name": "OutlineSize", "type": "NUMBER", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "OutlineColor", "type": "COLOR", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "MaskTexturePath", "type": "TEXT", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "AutoScrollDown", "type": "BOOLEAN", "required": false, "occurrences": 5, "observedValues": ["true"]}
+      ]
+    },
+    {
+      "type": "Label",
+      "category": "TEXT",
+      "canHaveChildren": false,
+      "occurrences": 401,
+      "properties": [
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 607, "observedValues": []},
+        {"name": "Text", "type": "TEXT", "required": true, "occurrences": 385, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 345, "observedValues": []},
+        {"name": "FontSize", "type": "NUMBER", "required": false, "occurrences": 120, "observedValues": ["10", "12", "14", "16", "18", "20", "24"]},
+        {"name": "TextColor", "type": "COLOR", "required": false, "occurrences": 107, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 98, "observedValues": []},
+        {"name": "RenderBold", "type": "BOOLEAN", "required": false, "occurrences": 64, "observedValues": ["true", "false"]},
+        {"name": "VerticalAlignment", "type": "TEXT", "required": false, "occurrences": 60, "observedValues": ["Top", "Center", "Bottom"]},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 40, "observedValues": ["1"]},
+        {"name": "HorizontalAlignment", "type": "TEXT", "required": false, "occurrences": 38, "observedValues": ["Left", "Center", "Right"]},
+        {"name": "RenderUppercase", "type": "BOOLEAN", "required": false, "occurrences": 36, "observedValues": ["true", "false"]},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 34, "observedValues": ["true", "false"]},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 32, "observedValues": []},
+        {"name": "MaskTexturePath", "type": "TEXT", "required": false, "occurrences": 14, "observedValues": []},
+        {"name": "Wrap", "type": "BOOLEAN", "required": false, "occurrences": 11, "observedValues": ["true", "false"]},
+        {"name": "LetterSpacing", "type": "NUMBER", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "FontName", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "TextSpans", "type": "LIST", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "RenderItalics", "type": "BOOLEAN", "required": false, "occurrences": 3, "observedValues": ["true", "false"]},
+        {"name": "OutlineSize", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "OutlineColor", "type": "COLOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "ShrinkTextToFit", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]}
+      ]
+    },
+    {
+      "type": "Button",
+      "category": "INTERACTIVE",
+      "canHaveChildren": false,
+      "occurrences": 74,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 66, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 64, "observedValues": []},
+        {"name": "TooltipText", "type": "TEXT", "required": false, "occurrences": 32, "observedValues": []},
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 31, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 26, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 19, "observedValues": []},
+        {"name": "Sounds", "type": "TUPLE", "required": false, "occurrences": 15, "observedValues": []},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 11, "observedValues": ["true", "false"]},
+        {"name": "Disabled", "type": "BOOLEAN", "required": false, "occurrences": 7, "observedValues": ["true", "false"]},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": ["1"]},
+        {"name": "MaskTexturePath", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "TextButton",
+      "category": "INTERACTIVE",
+      "canHaveChildren": false,
+      "occurrences": 43,
+      "properties": [
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 50, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 39, "observedValues": []},
+        {"name": "LabelStyle", "type": "TUPLE", "required": false, "occurrences": 39, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 39, "observedValues": []},
+        {"name": "Text", "type": "TEXT", "required": true, "occurrences": 38, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 30, "observedValues": []},
+        {"name": "Sounds", "type": "TUPLE", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "TooltipText", "type": "TEXT", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 5, "observedValues": ["1"]},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 3, "observedValues": ["true", "false"]},
+        {"name": "Wrap", "type": "BOOLEAN", "required": false, "occurrences": 3, "observedValues": ["true", "false"]},
+        {"name": "HorizontalAlignment", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": ["Left", "Center", "Right"]},
+        {"name": "VerticalAlignment", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": ["Top", "Center", "Bottom"]}
+      ]
+    },
+    {
+      "type": "ProgressBar",
+      "category": "DISPLAY",
+      "canHaveChildren": false,
+      "occurrences": 45,
+      "properties": [
+        {"name": "BarTexturePath", "type": "TEXT", "required": false, "occurrences": 48, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 38, "observedValues": []},
+        {"name": "Direction", "type": "TEXT", "required": false, "occurrences": 32, "observedValues": ["Right", "Left", "Up", "Down"]},
+        {"name": "Alignment", "type": "TEXT", "required": false, "occurrences": 25, "observedValues": []},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 14, "observedValues": []},
+        {"name": "EffectTexturePath", "type": "TEXT", "required": false, "occurrences": 11, "observedValues": []},
+        {"name": "EffectWidth", "type": "NUMBER", "required": false, "occurrences": 11, "observedValues": []},
+        {"name": "EffectHeight", "type": "NUMBER", "required": false, "occurrences": 11, "observedValues": []},
+        {"name": "EffectOffset", "type": "NUMBER", "required": false, "occurrences": 9, "observedValues": []}
+      ]
+    },
+    {
+      "type": "TextField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 30,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 29, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 29, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 28, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 26, "observedValues": []},
+        {"name": "PlaceholderStyle", "type": "TUPLE", "required": false, "occurrences": 24, "observedValues": []},
+        {"name": "PlaceholderText", "type": "TEXT", "required": false, "occurrences": 16, "observedValues": []},
+        {"name": "Icon", "type": "TUPLE", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "MaxLength", "type": "NUMBER", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "PasswordChar", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 4, "observedValues": ["1"]},
+        {"name": "OutlineSize", "type": "NUMBER", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "OutlineColor", "type": "COLOR", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "AutoFocus", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]},
+        {"name": "IsReadOnly", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]}
+      ]
+    },
+    {
+      "type": "DropdownBox",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 22,
+      "properties": [
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 21, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 20, "observedValues": []},
+        {"name": "PanelWidth", "type": "NUMBER", "required": false, "occurrences": 8, "observedValues": []},
+        {"name": "PanelAlign", "type": "TEXT", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "ShowSearchInput", "type": "BOOLEAN", "required": false, "occurrences": 3, "observedValues": ["true"]},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": ["1"]},
+        {"name": "MaxSelection", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "ShowLabel", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true", "false"]}
+      ]
+    },
+    {
+      "type": "CheckBox",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 22,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 22, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 22, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 16, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 16, "observedValues": []},
+        {"name": "TooltipText", "type": "TEXT", "required": false, "occurrences": 2, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ActionButton",
+      "category": "INTERACTIVE",
+      "canHaveChildren": false,
+      "occurrences": 22,
+      "properties": [
+        {"name": "Disabled", "type": "BOOLEAN", "required": false, "occurrences": 19, "observedValues": ["true", "false"]},
+        {"name": "ActionName", "type": "TEXT", "required": false, "occurrences": 15, "observedValues": []},
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 12, "observedValues": []},
+        {"name": "Alignment", "type": "TEXT", "required": false, "occurrences": 12, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 8, "observedValues": []},
+        {"name": "KeyBindingLabel", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ItemGrid",
+      "category": "CONTAINER",
+      "canHaveChildren": false,
+      "occurrences": 15,
+      "properties": [
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 16, "observedValues": []},
+        {"name": "SlotsPerRow", "type": "NUMBER", "required": false, "occurrences": 16, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "ScrollbarStyle", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "ShowScrollbar", "type": "BOOLEAN", "required": false, "occurrences": 3, "observedValues": ["true"]},
+        {"name": "RenderItemQualityBackground", "type": "BOOLEAN", "required": false, "occurrences": 4, "observedValues": ["true", "false"]},
+        {"name": "AreItemsDraggable", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]}
+      ]
+    },
+    {
+      "type": "TabNavigation",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 12,
+      "properties": [
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 18, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 17, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 15, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "SelectedTab", "type": "TEXT", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "AllowUnselection", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": ["1"]},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true", "false"]}
+      ]
+    },
+    {
+      "type": "TabButton",
+      "category": "INTERACTIVE",
+      "canHaveChildren": false,
+      "occurrences": 12,
+      "properties": [
+        {"name": "Id", "type": "TEXT", "required": true, "occurrences": 23, "observedValues": []},
+        {"name": "Icon", "type": "TEXT", "required": false, "occurrences": 19, "observedValues": []},
+        {"name": "TooltipText", "type": "TEXT", "required": false, "occurrences": 19, "observedValues": []},
+        {"name": "IconSelected", "type": "TEXT", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "Text", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 2, "observedValues": ["true", "false"]},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["1"]}
+      ]
+    },
+    {
+      "type": "SliderNumberField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 10,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "SliderStyle", "type": "TUPLE", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "NumberFieldStyle", "type": "TUPLE", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "NumberFieldContainerAnchor", "type": "ANCHOR", "required": false, "occurrences": 9, "observedValues": []},
+        {"name": "Min", "type": "NUMBER", "required": false, "occurrences": 9, "observedValues": ["0"]},
+        {"name": "Max", "type": "NUMBER", "required": false, "occurrences": 9, "observedValues": ["100"]},
+        {"name": "Step", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": ["1"]},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 7, "observedValues": []}
+      ]
+    },
+    {
+      "type": "NumberField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 10,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 10, "observedValues": []},
+        {"name": "Format", "type": "TEXT", "required": false, "occurrences": 9, "observedValues": ["0", "0.0", "0.00"]},
+        {"name": "PlaceholderStyle", "type": "TUPLE", "required": false, "occurrences": 9, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 9, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 8, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 8, "observedValues": []},
+        {"name": "MaxDecimalPlaces", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["0", "1", "2"]},
+        {"name": "Step", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["1"]},
+        {"name": "MinValue", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["0"]},
+        {"name": "MaxValue", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["100"]},
+        {"name": "Suffix", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": ["1"]}
+      ]
+    },
+    {
+      "type": "ToggleButton",
+      "category": "INTERACTIVE",
+      "canHaveChildren": false,
+      "occurrences": 7,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "CheckedStyle", "type": "TUPLE", "required": false, "occurrences": 7, "observedValues": []},
+        {"name": "TooltipText", "type": "TEXT", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "Sounds", "type": "TUPLE", "required": false, "occurrences": 8, "observedValues": []}
+      ]
+    },
+    {
+      "type": "Slider",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 6,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "Min", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["0"]},
+        {"name": "Max", "type": "NUMBER", "required": false, "occurrences": 6, "observedValues": ["100"]},
+        {"name": "Step", "type": "NUMBER", "required": false, "occurrences": 5, "observedValues": ["1"]},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["1"]},
+        {"name": "Handle", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "HandleWidth", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "HandleHeight", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "Fill", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "DynamicPane",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 6,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "ResizeAt", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "ResizerSize", "type": "NUMBER", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "ResizerBackground", "type": "TUPLE", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["1"]},
+        {"name": "MinSize", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ItemPreviewComponent",
+      "category": "DISPLAY",
+      "canHaveChildren": false,
+      "occurrences": 6,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 6, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "ItemScale", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "HotkeyLabel",
+      "category": "TEXT",
+      "canHaveChildren": false,
+      "occurrences": 5,
+      "properties": [
+        {"name": "InputBindingKey", "type": "TEXT", "required": true, "occurrences": 5, "observedValues": []},
+        {"name": "InputBindingKeyPrefix", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "InputBindingKeyPrefixBinding", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ColorPickerDropdownBox",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 5,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "Color", "type": "COLOR", "required": false, "occurrences": 4, "observedValues": []},
+        {"name": "Format", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "DisplayTextField", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]}
+      ]
+    },
+    {
+      "type": "SceneBlur",
+      "category": "DISPLAY",
+      "canHaveChildren": false,
+      "occurrences": 4,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 4, "observedValues": []}
+      ]
+    },
+    {
+      "type": "DynamicPaneContainer",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 4,
+      "properties": [
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 4, "observedValues": ["Left"]},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["1"]}
+      ]
+    },
+    {
+      "type": "CircularProgressBar",
+      "category": "DISPLAY",
+      "canHaveChildren": false,
+      "occurrences": 3,
+      "properties": [
+        {"name": "Color", "type": "COLOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "MaskTexturePath", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": []}
+      ]
+    },
+    {
+      "type": "Panel",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 3,
+      "properties": [
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Visible", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true", "false"]}
+      ]
+    },
+    {
+      "type": "BlockSelector",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 3,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Capacity", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": []}
+      ]
+    },
+    {
+      "type": "CheckBoxContainer",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 3,
+      "properties": [
+        {"name": "LayoutMode", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "OutlineSize", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "OutlineColor", "type": "COLOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []}
+      ]
+    },
+    {
+      "type": "Image",
+      "category": "MEDIA",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Source", "type": "IMAGE_PATH", "required": true, "occurrences": 2, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Stretch", "type": "TEXT", "required": false, "occurrences": 0, "observedValues": ["None", "Fill", "Uniform", "UniformToFill"]}
+      ]
+    },
+    {
+      "type": "AssetImage",
+      "category": "MEDIA",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 5, "observedValues": []},
+        {"name": "FallbackTexturePath", "type": "TEXT", "required": false, "occurrences": 5, "observedValues": []}
+      ]
+    },
+    {
+      "type": "BackgroundImage",
+      "category": "MEDIA",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Image", "type": "IMAGE_PATH", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "ImageUW", "type": "IMAGE_PATH", "required": false, "occurrences": 2, "observedValues": []}
+      ]
+    },
+    {
+      "type": "FloatSlider",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Min", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["0"]},
+        {"name": "Max", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["1"]},
+        {"name": "Step", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": ["0.01"]},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": []}
+      ]
+    },
+    {
+      "type": "FloatSliderNumberField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "SliderStyle", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "NumberFieldStyle", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "NumberFieldContainerAnchor", "type": "ANCHOR", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "NumberFieldMaxDecimalPlaces", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "Min", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": ["0"]},
+        {"name": "Max", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": ["1"]},
+        {"name": "Step", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": ["0.01"]},
+        {"name": "Value", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "MultilineTextField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Background", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "AutoGrow", "type": "BOOLEAN", "required": false, "occurrences": 2, "observedValues": ["true"]},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "PlaceholderStyle", "type": "TUPLE", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "MaxVisibleLines", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "MaxLength", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "PlaceholderText", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "PlayerPreviewComponent",
+      "category": "DISPLAY",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Scale", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "CodeEditor",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "FlexWeight", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": ["1"]},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "ContentPadding", "type": "ANCHOR", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Value", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "IsReadOnly", "type": "BOOLEAN", "required": false, "occurrences": 1, "observedValues": ["true"]},
+        {"name": "ScrollbarStyle", "type": "TUPLE", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "Sprite",
+      "category": "MEDIA",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "TexturePath", "type": "TEXT", "required": true, "occurrences": 2, "observedValues": []},
+        {"name": "Frame", "type": "NUMBER", "required": false, "occurrences": 2, "observedValues": []},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "PerRow", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "FramesPerSecond", "type": "NUMBER", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "CompactTextField",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 2,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "CollapsedWidth", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "ExpandedWidth", "type": "NUMBER", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "PlaceholderText", "type": "TEXT", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "PlaceholderStyle", "type": "TUPLE", "required": false, "occurrences": 3, "observedValues": []},
+        {"name": "Padding", "type": "ANCHOR", "required": false, "occurrences": 3, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ColorPicker",
+      "category": "INPUT",
+      "canHaveChildren": false,
+      "occurrences": 1,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "Format", "type": "TEXT", "required": false, "occurrences": 1, "observedValues": []},
+        {"name": "Style", "type": "TUPLE", "required": false, "occurrences": 1, "observedValues": []}
+      ]
+    },
+    {
+      "type": "ScrollView",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 0,
+      "properties": [
+        {"name": "Orientation", "type": "TEXT", "required": false, "occurrences": 0, "observedValues": ["Vertical", "Horizontal"]},
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 0, "observedValues": []}
+      ]
+    },
+    {
+      "type": "TabPanel",
+      "category": "CONTAINER",
+      "canHaveChildren": true,
+      "occurrences": 0,
+      "properties": [
+        {"name": "Anchor", "type": "ANCHOR", "required": false, "occurrences": 0, "observedValues": []}
+      ]
+    }
+  ]
+}

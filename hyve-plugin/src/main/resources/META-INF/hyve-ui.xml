@@ -1,0 +1,56 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType
+        name="Hytale UI"
+        language="HytaleUI"
+        implementationClass="com.hyve.ui.HyveUIFileType"
+        fieldName="INSTANCE"
+        extensions="ui"/>
+
+    <fileEditorProvider
+        implementation="com.hyve.ui.editor.HyveUITextEditorWithPreviewProvider"/>
+
+    <projectService
+        serviceImplementation="com.hyve.ui.service.HyveUIProjectService"/>
+
+    <notificationGroup
+        id="Hyve UI Editor"
+        displayType="BALLOON"
+        isLogByDefault="true"/>
+  </extensions>
+
+  <actions>
+    <group id="HyveUIMenu" text="Hyve UI" popup="true">
+      <add-to-group group-id="MainMenu" anchor="before" relative-to-action="HelpMenu"/>
+
+      <action
+          id="HyveUI.NewUIFile"
+          class="com.hyve.ui.actions.NewUIFileAction"
+          text="New UI File"
+          description="Create a new Hytale UI file"
+          icon="AllIcons.FileTypes.Xml">
+        <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift U"/>
+      </action>
+
+      <action
+          id="HyveUI.OpenInTextEditor"
+          class="com.hyve.ui.actions.OpenInTextEditorAction"
+          text="Open in Text Editor"
+          description="Open current .ui file in text editor"/>
+    </group>
+
+    <action
+        id="HyveUI.OpenInVisualEditor"
+        class="com.hyve.ui.actions.OpenInVisualEditorAction"
+        text="Open in Visual Editor"
+        description="Open .ui file in visual editor">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="EditSource"/>
+    </action>
+  </actions>
+
+  <applicationListeners>
+    <listener
+        class="com.hyve.ui.editor.HyveUIEditorSaveHandler"
+        topic="com.intellij.openapi.fileEditor.FileDocumentManagerListener"/>
+  </applicationListeners>
+</idea-plugin>

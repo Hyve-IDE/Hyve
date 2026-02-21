@@ -1,0 +1,112 @@
+<idea-plugin package="com.hyve.knowledge">
+  <id>com.hyve.knowledge</id>
+  <name>Hyve Knowledge Base</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+
+  <description><![CDATA[
+    <p>
+    Hytale Knowledge Base for Hyve IDE.
+    One-click decompilation of HytaleServer.jar, semantic + structural search
+    over the decompiled codebase, and MCP tool registration for AI assistants.
+    </p>
+    <p>
+    Features:
+    <ul>
+      <li>Decompile HytaleServer.jar via bundled FernFlower</li>
+      <li>Method-level chunking and embedding (Ollama / VoyageAI)</li>
+      <li>HNSW vector search + graph-based structural queries</li>
+      <li>Compose-based search Tool Window</li>
+      <li>MCP tools for AI-assisted code exploration</li>
+    </ul>
+    </p>
+  ]]></description>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <plugin id="org.jetbrains.java.decompiler"/>
+    <module name="intellij.platform.compose"/>
+    <plugin id="com.hyve.common"/>
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationConfigurable
+        id="hyve.knowledge.settings"
+        parentId="hyve.settings"
+        displayName="Hyve Knowledge"
+        instance="com.hyve.knowledge.settings.KnowledgeSettingsConfigurable"/>
+
+    <applicationConfigurable
+        id="hyve.knowledge.settings.embedder"
+        parentId="hyve.knowledge.settings"
+        displayName="Embedder"
+        instance="com.hyve.knowledge.settings.EmbedderConfigurable"/>
+
+    <applicationConfigurable
+        id="hyve.knowledge.settings.search"
+        parentId="hyve.knowledge.settings"
+        displayName="Search"
+        instance="com.hyve.knowledge.settings.SearchConfigurable"/>
+
+    <applicationService
+        serviceImplementation="com.hyve.knowledge.settings.KnowledgeSettings"/>
+
+    <toolWindow id="Hytale Knowledge" anchor="right" icon="AllIcons.Toolwindows.ToolWindowFind"
+        factoryClass="com.hyve.knowledge.ui.KnowledgeToolWindowFactory"/>
+
+    <notificationGroup id="Hyve Knowledge" displayType="BALLOON" isLogByDefault="true"/>
+  </extensions>
+
+  <depends optional="true" config-file="knowledge-mcp.xml">com.intellij.mcpServer</depends>
+
+  <actions>
+    <action id="HyveDecompileServer"
+        class="com.hyve.knowledge.actions.DecompileServerAction"
+        text="Decompile Hytale Server..."
+        description="Decompile HytaleServer.jar using FernFlower">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveBuildIndex"
+        class="com.hyve.knowledge.actions.BuildIndexAction"
+        text="Index Game Code..."
+        description="Index decompiled source for semantic search">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveIndexGameData"
+        class="com.hyve.knowledge.actions.IndexGameDataAction"
+        text="Index Game Data..."
+        description="Parse and index game data from Assets.zip">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveIndexClientUI"
+        class="com.hyve.knowledge.actions.IndexClientUIAction"
+        text="Index Client UI..."
+        description="Index client UI files (.xaml, .ui, .json)">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveIndexDocs"
+        class="com.hyve.knowledge.actions.IndexDocsAction"
+        text="Index Modding Docs..."
+        description="Fetch and index HytaleModding.dev documentation">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveBuildAllIndices"
+        class="com.hyve.knowledge.actions.BuildAllIndexAction"
+        text="Build All Knowledge Indices..."
+        description="Build all 4 knowledge indices (code, game data, client UI, docs)">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveInspectClientUIContent"
+        class="com.hyve.knowledge.actions.InspectClientUIContentAction"
+        text="Inspect Client UI Content..."
+        description="Analyze .ui file content and report binding strategy matches against gamedata">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveConfigureMcp"
+        class="com.hyve.knowledge.actions.ConfigureMcpAction"
+        text="Configure Hytale Knowledge MCP..."
+        description="Configure standalone MCP server for external LLM clients">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>

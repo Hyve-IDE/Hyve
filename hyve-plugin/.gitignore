@@ -1,0 +1,14 @@
+# Build output
+build/
+out/
+
+# Signing keys (never commit)
+*.pem
+*.crt
+
+# IDE files
+.idea/
+*.iml
+
+# Gradle
+.gradle/

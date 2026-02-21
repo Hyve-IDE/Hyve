@@ -1,0 +1,15 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background rectangle representing a UI frame -->
+  <rect x="1" y="2" width="14" height="12" rx="1" fill="#2D2D44" stroke="#ffd633" stroke-width="1"/>
+
+  <!-- Title bar -->
+  <rect x="2" y="3" width="12" height="2" rx="0.5" fill="#ffd633" opacity="0.4"/>
+
+  <!-- UI elements representation -->
+  <!-- Left panel -->
+  <rect x="2" y="6" width="4" height="7" rx="0.5" fill="#ffd633" opacity="0.6"/>
+
+  <!-- Right content area -->
+  <rect x="7" y="6" width="7" height="3" rx="0.5" fill="#ffd633" opacity="0.3"/>
+  <rect x="7" y="10" width="5" height="3" rx="0.5" fill="#ffd633" opacity="0.3"/>
+</svg>

@@ -1,0 +1,46 @@
+<idea-plugin package="com.hyve.common">
+  <id>com.hyve.common</id>
+  <name>Hyve Common</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+
+  <description><![CDATA[
+    <p>
+    Hyve Common is a shared library module that provides foundational utilities for Hyve plugins.
+    It includes Compose embedding infrastructure, theme bridging between IntelliJ and Compose,
+    and base classes for building Hyve-branded features like HyStudio and Hyvemind.
+    </p>
+    <p>
+    This plugin is a dependency for other Hyve plugins and is not meant to be used directly.
+    </p>
+  ]]></description>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <module name="intellij.platform.compose"/>
+  </dependencies>
+
+  <resource-bundle>messages.HyveCommonBundle</resource-bundle>
+
+  <!-- Extension Points that other Hyve plugins can use -->
+  <extensionPoints>
+    <!-- Extension point for registering Hyve color overrides -->
+    <extensionPoint qualifiedName="com.hyve.common.colorOverride"
+                    interface="com.hyve.common.compose.HyveColorOverride"
+                    dynamic="true"/>
+  </extensionPoints>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Notification group for Hyve plugins -->
+    <notificationGroup id="Hyve Notifications"
+                       displayType="BALLOON"
+                       isLogByDefault="true"/>
+
+    <!-- Hyve parent settings configurable under Tools -->
+    <applicationConfigurable
+        id="hyve.settings"
+        parentId="tools"
+        displayName="Hyve"
+        instance="com.hyve.common.settings.HyveSettingsConfigurable"/>
+  </extensions>
+</idea-plugin>

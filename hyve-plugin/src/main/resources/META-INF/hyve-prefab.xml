@@ -1,0 +1,21 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+        serviceImplementation="com.hyve.prefab.editor.PrefabDocumentCache"/>
+
+    <fileType
+        name="Hytale Prefab"
+        language="JSON"
+        implementationClass="com.hyve.prefab.HyvePrefabFileType"
+        fieldName="INSTANCE"
+        fileNamePatterns="*.prefab.json"/>
+
+    <fileEditorProvider
+        implementation="com.hyve.prefab.editor.PrefabEditorProvider"/>
+
+    <notificationGroup
+        id="Hyve Prefab Editor"
+        displayType="BALLOON"
+        isLogByDefault="true"/>
+  </extensions>
+</idea-plugin>

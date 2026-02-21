@@ -1,0 +1,50 @@
+<idea-plugin package="com.hyve.prefab">
+  <id>com.hyve.prefab</id>
+  <name>Hyve Prefab Editor</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+
+  <description><![CDATA[
+    <p>
+    Structured editor for Hytale .prefab.json files.
+    Edit entity properties without hand-editing massive JSON.
+    </p>
+    <p>
+    Features:
+    <ul>
+      <li>Streaming parser for large prefab files (50MB+)</li>
+      <li>Filterable entity list with position display</li>
+      <li>Component inspector with editable fields</li>
+      <li>Byte-splice export preserves blocks/fluids</li>
+      <li>Undo/redo support</li>
+    </ul>
+    </p>
+  ]]></description>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <plugin id="com.intellij.modules.json"/>
+    <module name="intellij.platform.compose"/>
+    <plugin id="com.hyve.common"/>
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+        serviceImplementation="com.hyve.prefab.editor.PrefabDocumentCache"/>
+
+    <fileType
+        name="Hytale Prefab"
+        language="JSON"
+        implementationClass="com.hyve.prefab.HyvePrefabFileType"
+        fieldName="INSTANCE"
+        fileNamePatterns="*.prefab.json"/>
+
+    <fileEditorProvider
+        implementation="com.hyve.prefab.editor.PrefabEditorProvider"/>
+
+    <notificationGroup
+        id="Hyve Prefab Editor"
+        displayType="BALLOON"
+        isLogByDefault="true"/>
+  </extensions>
+</idea-plugin>

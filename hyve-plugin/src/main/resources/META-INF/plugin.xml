@@ -1,0 +1,71 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <id>com.hyve</id>
+  <name>Hyve Toolkit</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+  <version>1.0.0</version>
+
+  <description><![CDATA[
+    <p>
+    <b>Hyve Toolkit</b> — the all-in-one IDE plugin for Hytale modding.
+    </p>
+    <ul>
+      <li><b>UI Editor</b> — visual canvas for designing Hytale .ui interfaces</li>
+      <li><b>Prefab Editor</b> — structured editor for .prefab.json files (50 MB+)</li>
+      <li><b>Mod Wizard</b> — New-Project scaffold for Java/Kotlin Hytale mods</li>
+      <li><b>Knowledge Base</b> — decompile, index, and semantically search game code &amp; data</li>
+    </ul>
+  ]]></description>
+
+  <idea-version since-build="253" until-build="253.*"/>
+
+  <change-notes><![CDATA[
+    <b>1.0.0</b> — Initial marketplace release combining Hyve Common, UI Editor,
+    Prefab Editor, Mod Wizard, and Knowledge Base.
+  ]]></change-notes>
+
+  <!-- ── Dependencies (union of all 5 plugins) ── -->
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <plugin id="com.intellij.modules.json"/>
+    <plugin id="com.intellij.modules.java"/>
+    <plugin id="org.jetbrains.java.decompiler"/>
+    <module name="intellij.platform.compose"/>
+  </dependencies>
+
+  <!-- ── Resource bundles ── -->
+  <resource-bundle>messages.HyveCommonBundle</resource-bundle>
+  <resource-bundle>messages.HyveUIBundle</resource-bundle>
+
+  <!-- ── Extension point from hyve-common ── -->
+  <extensionPoints>
+    <extensionPoint qualifiedName="com.hyve.common.colorOverride"
+                    interface="com.hyve.common.compose.HyveColorOverride"
+                    dynamic="true"/>
+  </extensionPoints>
+
+  <!-- ── Extensions from hyve-common (inline — small) ── -->
+  <extensions defaultExtensionNs="com.intellij">
+    <notificationGroup id="Hyve Notifications"
+                       displayType="BALLOON"
+                       isLogByDefault="true"/>
+    <applicationConfigurable
+        id="hyve.settings"
+        parentId="tools"
+        displayName="Hyve"
+        instance="com.hyve.common.settings.HyveSettingsConfigurable"/>
+
+    <!-- ── Hyve Dark Theme ── -->
+    <themeProvider id="Hyve Dark" path="/themes/hyve/hyve_dark.theme.json"/>
+    <bundledColorScheme id="Hyve Dark" path="/themes/hyve/hyve_darkScheme"/>
+  </extensions>
+
+  <!-- ── Sub-plugin descriptors ── -->
+  <xi:include href="/META-INF/hyve-ui.xml"/>
+  <xi:include href="/META-INF/hyve-prefab.xml"/>
+  <xi:include href="/META-INF/hyve-mod.xml"/>
+  <xi:include href="/META-INF/hyve-knowledge.xml"/>
+
+  <!-- ── Optional MCP dependency ── -->
+  <depends optional="true" config-file="knowledge-mcp.xml">com.intellij.mcpServer</depends>
+</idea-plugin>

@@ -1,0 +1,24 @@
+# Build output
+**/build/
+**/out/
+**/bin/
+
+# Gradle
+.gradle/
+.intellijPlatform/
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+
+# Signing keys
+*.pem
+*.crt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

@@ -1,0 +1,9 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark purple rounded square background -->
+  <rect width="40" height="40" rx="8" fill="#2d2b55"/>
+  <!-- Nested hexagon logo from Looka brand kit -->
+  <g transform="translate(-0.3,-0.3) scale(8.125)" fill="#ffd633">
+    <path d="M2.501,4.281l-1.543-0.89L0.957,1.61l1.542-0.892l1.543,0.891l0.001,1.78L2.501,4.281z M1.408,3.132l1.093,0.63L3.593,3.13L3.592,1.869L2.499,1.238L1.407,1.87L1.408,3.132z"/>
+    <path d="M2.5,3.433L1.693,2.967L1.692,2.034l0.807-0.466l0.809,0.466v0.932L2.5,3.433z M2.143,2.707L2.5,2.913l0.357-0.207V2.294L2.5,2.088L2.143,2.294V2.707z"/>
+  </g>
+</svg>

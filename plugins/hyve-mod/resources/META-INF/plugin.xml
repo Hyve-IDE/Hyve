@@ -1,0 +1,26 @@
+<idea-plugin package="com.hyve.mod">
+  <id>com.hyve.mod</id>
+  <name>Hyve Mod</name>
+  <vendor url="https://hyve.dev">Hyve</vendor>
+  <category>Hyve</category>
+
+  <description><![CDATA[
+    <p>
+    Hyve Mod provides a New Project wizard for scaffolding Hytale mods.
+    It generates a complete Gradle project with build files, run configuration,
+    manifest, and main plugin class for both Java and Kotlin.
+    </p>
+  ]]></description>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.java"/>
+    <plugin id="com.hyve.common"/>
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <moduleBuilder builderClass="com.hyve.mod.HytaleModuleBuilder"/>
+    <spellchecker.bundledDictionaryProvider implementation="com.hyve.mod.HytaleBundledDictionaryProvider"/>
+    <configurationType implementation="com.hyve.mod.run.HytaleServerConfigurationType"/>
+    <configurationType implementation="com.hyve.mod.run.HytaleBuildConfigurationType"/>
+  </extensions>
+</idea-plugin>

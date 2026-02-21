@@ -1,0 +1,463 @@
+{
+  "name": "Hyve Dark",
+  "dark": true,
+  "author": "Hyve",
+  "editorScheme": "Hyve Dark",
+  "parentTheme": "Darcula",
+
+  "colors": {
+    "Honey": "#F7A800",
+    "HoneyLight": "#FFB824",
+    "HoneyDark": "#D99000",
+    "HoneySubtle": "#4A3800",
+
+    "DeepNight": "#0D0D14",
+    "Midnight": "#1A1A2E",
+    "Twilight": "#16213E",
+    "Slate": "#2D2D44",
+    "SlateLight": "#3D3D54",
+
+    "TextPrimary": "#EAEAEA",
+    "TextSecondary": "#8A8A9A",
+    "TextDisabled": "#4A4A5A",
+
+    "Success": "#4ADE80",
+    "SuccessDark": "#3AAF6A",
+    "Warning": "#FBBF24",
+    "Error": "#F87171",
+    "ErrorDark": "#C45555",
+    "Info": "#60A5FA",
+    "Accent": "#9D8CFF"
+  },
+
+  "ui": {
+    "*": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "selectionInactiveForeground": "TextPrimary",
+      "selectionInactiveBackground": "Slate",
+      "disabledForeground": "TextDisabled",
+      "disabledText": "TextDisabled",
+      "disabledBackground": "DeepNight",
+      "disabledBorderColor": "Slate",
+      "inactiveForeground": "TextDisabled",
+      "borderColor": "Slate",
+      "separatorColor": "Slate",
+      "separatorForeground": "TextSecondary",
+      "hoverBackground": "Twilight",
+      "lightSelectionBackground": "Twilight",
+      "infoForeground": "TextSecondary",
+      "acceleratorForeground": "TextSecondary",
+      "shortcutForeground": "TextSecondary",
+      "underlineColor": "Honey",
+      "inactiveUnderlineColor": "TextDisabled",
+      "focusColor": "Honey",
+      "modifiedItemForeground": "Honey"
+    },
+
+    "ActionButton": {
+      "hoverBackground": "#FFFFFF16",
+      "hoverBorderColor": "#FFFFFF00",
+      "pressedBackground": "Twilight",
+      "pressedBorderColor": "#FFFFFF00",
+      "focusedBorderColor": "Honey",
+      "hoverSeparatorColor": "TextDisabled"
+    },
+
+    "Borders.color": "Slate",
+    "Borders.ContrastBorderColor": "Slate",
+
+    "Button": {
+      "arc": 8,
+      "foreground": "TextSecondary",
+      "startBackground": "Slate",
+      "endBackground": "Slate",
+      "startBorderColor": "SlateLight",
+      "endBorderColor": "SlateLight",
+      "focusedBorderColor": "Honey",
+      "shadowColor": "#00000000",
+      "disabledText": "TextDisabled",
+      "default": {
+        "foreground": "TextPrimary",
+        "startBackground": "Slate",
+        "endBackground": "Slate",
+        "startBorderColor": "Honey",
+        "endBorderColor": "Honey",
+        "focusedBorderColor": "HoneyLight",
+        "shadowColor": "#00000000"
+      }
+    },
+
+    "CheckBox": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "disabledForeground": "TextDisabled"
+    },
+
+    "ComboBox": {
+      "background": "Midnight",
+      "nonEditableBackground": "Midnight",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "ArrowButton": {
+        "background": "Midnight",
+        "nonEditableBackground": "Midnight",
+        "iconColor": "TextSecondary",
+        "disabledIconColor": "TextDisabled"
+      }
+    },
+
+    "CompletionPopup": {
+      "background": "Midnight",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "matchForeground": "Honey"
+    },
+
+    "Counter": {
+      "background": "Honey",
+      "foreground": "DeepNight"
+    },
+
+    "Debugger": {
+      "Variables": {
+        "valueForeground": "HoneyLight",
+        "collectingDataForeground": "TextSecondary",
+        "evaluatingExpressionForeground": "TextSecondary",
+        "changedValueForeground": "Info",
+        "modifyingValueForeground": "Info",
+        "errorMessageForeground": "Error",
+        "exceptionForeground": "Error",
+        "typeForeground": "TextSecondary"
+      }
+    },
+
+    "Editor": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary"
+    },
+
+    "EditorTabs": {
+      "background": "Midnight",
+      "underlineColor": "Honey",
+      "underlineHeight": 2,
+      "hoverBackground": "Twilight",
+      "underlinedTabBackground": "DeepNight",
+      "underlinedTabForeground": "TextPrimary",
+      "inactiveUnderlineColor": "Slate"
+    },
+
+    "FileColor": {
+      "Yellow": "#3D3520",
+      "Green": "#203D25",
+      "Blue": "#202D3D",
+      "Violet": "#2D203D",
+      "Orange": "#3D2D20",
+      "Rose": "#3D2028",
+      "Gray": "#252530"
+    },
+
+    "Label": {
+      "foreground": "TextPrimary",
+      "disabledForeground": "TextDisabled",
+      "errorForeground": "Error",
+      "infoForeground": "TextSecondary",
+      "successForeground": "Success",
+      "warningForeground": "Warning"
+    },
+
+    "Link": {
+      "activeForeground": "Honey",
+      "hoverForeground": "HoneyLight",
+      "visitedForeground": "Accent",
+      "pressedForeground": "HoneyDark"
+    },
+
+    "List": {
+      "background": "Midnight",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "hoverBackground": "Slate"
+    },
+
+    "MainToolbar": {
+      "background": "Midnight",
+      "Dropdown": {
+        "hoverBackground": "Twilight"
+      }
+    },
+
+    "Menu": {
+      "background": "Midnight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "separatorColor": "Slate"
+    },
+
+    "MenuBar": {
+      "background": "Midnight",
+      "foreground": "TextSecondary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary"
+    },
+
+    "MenuItem": {
+      "background": "Midnight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "acceleratorForeground": "TextSecondary",
+      "acceleratorSelectionForeground": "TextPrimary",
+      "disabledForeground": "TextDisabled"
+    },
+
+    "NavBar": {
+      "background": "Midnight"
+    },
+
+    "Notification": {
+      "background": "Midnight",
+      "foreground": "TextPrimary",
+      "errorBackground": "#2D1A1A",
+      "errorForeground": "Error",
+      "errorBorderColor": "Error",
+      "warningBackground": "#2D2A1A",
+      "warningForeground": "Warning",
+      "warningBorderColor": "Warning"
+    },
+
+    "Panel.background": "DeepNight",
+
+    "Plugins": {
+      "background": "DeepNight",
+      "tagBackground": "Twilight",
+      "tagForeground": "TextSecondary",
+      "hoverBackground": "Slate",
+      "lightSelectionBackground": "Twilight",
+      "Button": {
+        "installForeground": "TextPrimary",
+        "installBackground": "Slate",
+        "installBorderColor": "Honey",
+        "installFillForeground": "TextPrimary",
+        "installFillBackground": "Slate",
+        "updateForeground": "TextPrimary",
+        "updateBackground": "Slate",
+        "updateBorderColor": "Success"
+      }
+    },
+
+    "PopupMenu": {
+      "background": "Midnight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary"
+    },
+
+    "PopupMenuSeparator": {
+      "stripeColor": "Slate"
+    },
+
+    "Popup": {
+      "background": "Midnight",
+      "Header": {
+        "activeBackground": "Twilight",
+        "inactiveBackground": "Midnight"
+      },
+      "Toolbar": {
+        "background": "Midnight",
+        "borderColor": "Slate"
+      },
+      "Advertiser": {
+        "foreground": "TextSecondary",
+        "background": "Midnight"
+      }
+    },
+
+    "ProgressBar": {
+      "trackColor": "Slate",
+      "progressColor": "Honey",
+      "indeterminateStartColor": "Honey",
+      "indeterminateEndColor": "HoneyDark",
+      "failedColor": "Error",
+      "failedEndColor": "ErrorDark",
+      "passedColor": "Success",
+      "passedEndColor": "SuccessDark"
+    },
+
+    "ScrollBar": {
+      "Mac.Transparent.thumbColor": "Slate",
+      "Mac.Transparent.hoverThumbColor": "SlateLight",
+      "Mac.thumbColor": "Slate",
+      "Mac.hoverThumbColor": "SlateLight",
+      "Transparent.thumbColor": "Slate",
+      "Transparent.hoverThumbColor": "SlateLight",
+      "thumbColor": "Slate",
+      "hoverThumbColor": "SlateLight",
+      "trackColor": "DeepNight",
+      "hoverTrackColor": "Midnight"
+    },
+
+    "SearchEverywhere": {
+      "background": "Midnight",
+      "Header.background": "DeepNight",
+      "SearchField.background": "DeepNight",
+      "Tab": {
+        "selectedBackground": "Twilight",
+        "selectedForeground": "TextPrimary"
+      }
+    },
+
+    "SearchMatch": {
+      "startBackground": "HoneySubtle",
+      "endBackground": "HoneySubtle"
+    },
+
+    "Separator": {
+      "separatorColor": "Slate"
+    },
+
+    "SidePanel": {
+      "background": "Midnight"
+    },
+
+    "Slider": {
+      "trackColor": "Slate",
+      "buttonColor": "Honey",
+      "buttonBorderColor": "HoneyDark"
+    },
+
+    "SpeedSearch": {
+      "background": "Twilight",
+      "foreground": "TextPrimary",
+      "borderColor": "Honey",
+      "errorForeground": "Error"
+    },
+
+    "StatusBar": {
+      "background": "Midnight",
+      "foreground": "TextSecondary",
+      "borderColor": "Slate",
+      "hoverBackground": "Slate"
+    },
+
+    "TabbedPane": {
+      "underlineColor": "Honey",
+      "hoverColor": "Twilight",
+      "focusColor": "Slate"
+    },
+
+    "Table": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "gridColor": "Slate",
+      "hoverBackground": "Slate",
+      "stripeColor": "Midnight"
+    },
+
+    "TextArea": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "caretForeground": "Honey"
+    },
+
+    "TextField": {
+      "background": "DeepNight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "caretForeground": "Honey"
+    },
+
+    "ToolWindow": {
+      "background": "Midnight",
+      "Button": {
+        "foreground": "TextSecondary",
+        "hoverBackground": "Twilight",
+        "selectedBackground": "Twilight",
+        "selectedForeground": "Honey"
+      },
+      "Header": {
+        "background": "Midnight",
+        "inactiveBackground": "Midnight",
+        "borderColor": "Slate"
+      },
+      "HeaderTab": {
+        "underlineColor": "Honey",
+        "hoverBackground": "Twilight",
+        "selectedBackground": "Twilight",
+        "hoverInactiveBackground": "Slate"
+      }
+    },
+
+    "Tree": {
+      "background": "Midnight",
+      "foreground": "TextPrimary",
+      "selectionBackground": "Twilight",
+      "selectionForeground": "TextPrimary",
+      "hoverBackground": "Slate",
+      "modifiedItemForeground": "Honey",
+      "errorForeground": "Error"
+    },
+
+    "ValidationTooltip": {
+      "errorBackground": "#2D1A1A",
+      "errorBorderColor": "Error",
+      "warningBackground": "#2D2A1A",
+      "warningBorderColor": "Warning"
+    },
+
+    "WelcomeScreen": {
+      "background": "DeepNight",
+      "Projects": {
+        "background": "Midnight",
+        "selectionBackground": "Twilight",
+        "selectionForeground": "TextPrimary",
+        "actions.background": "Twilight"
+      },
+      "Details.background": "Midnight",
+      "separatorColor": "Slate",
+      "SidePanel.background": "Midnight"
+    }
+  },
+
+  "icons": {
+    "ColorPalette": {
+      "Checkbox.Background.Default": "Midnight",
+      "Checkbox.Border.Default": "SlateLight",
+      "Checkbox.Foreground.Selected": "Honey",
+      "Checkbox.Focus.Wide": "Slate",
+      "Checkbox.Background.Selected": "Midnight",
+      "Checkbox.Border.Selected": "SlateLight",
+      "Checkbox.Focus.Thin.Default": "Slate",
+      "Checkbox.Focus.Thin.Selected": "Slate",
+
+      "Actions.Grey": "TextSecondary",
+      "Actions.Red": "Error",
+      "Actions.Yellow": "Warning",
+      "Actions.Green": "Success",
+      "Actions.Blue": "Info",
+      "Actions.GreyInline.Dark": "TextDisabled",
+
+      "Objects.Grey": "TextSecondary",
+      "Objects.RedStatus": "Error",
+      "Objects.Red": "Error",
+      "Objects.Pink": "Accent",
+      "Objects.Yellow": "Warning",
+      "Objects.Green": "Success",
+      "Objects.Blue": "Info",
+      "Objects.Purple": "Accent",
+      "Objects.BlackText": "TextPrimary",
+      "Objects.YellowDark": "HoneyDark",
+      "Objects.GreenAndroid": "Success"
+    }
+  }
+}
