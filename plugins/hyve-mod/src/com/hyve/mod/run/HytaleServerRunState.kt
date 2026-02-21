@@ -49,10 +49,21 @@ class HytaleServerRunState(
         cmd.addParameter("-jar")
         cmd.addParameter("HytaleServer.jar")
 
-        // Program args (quote-aware parsing)
-        if (config.programArgs.isNotBlank()) {
-            cmd.addParameters(ParametersListUtil.parse(config.programArgs))
+        // Auto-inject --assets if not already specified
+        val parsedArgs = if (config.programArgs.isNotBlank()) {
+            ParametersListUtil.parse(config.programArgs)
+        } else {
+            emptyList()
         }
+        if (!parsedArgs.contains("--assets")) {
+            val assetsZip = File(config.installPath, "Assets.zip")
+            if (assetsZip.isFile) {
+                cmd.addParameters("--assets", assetsZip.absolutePath)
+            }
+        }
+
+        // Program args (quote-aware parsing)
+        cmd.addParameters(parsedArgs)
 
         cmd.workDirectory = serverDir
         cmd.charset = Charsets.UTF_8

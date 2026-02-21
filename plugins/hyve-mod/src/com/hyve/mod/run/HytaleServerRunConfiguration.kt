@@ -19,7 +19,7 @@ class HytaleServerRunConfiguration(
     var enableDebug: Boolean = false
     var debugPort: Int = 5005
     var vmArgs: String = ""
-    var programArgs: String = "--assets --allow-op --disable-sentry"
+    var programArgs: String = "--allow-op --disable-sentry"
 
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
         return HytaleServerSettingsEditor(project)
