@@ -219,14 +219,15 @@ tasks.named<Zip>("buildPlugin") {
     }
 }
 
-// ── Copy bundled hot-reload mod JAR into plugin sandbox ──────────────────
+// ── Bundle pre-built hot-reload mod JAR ──────────────────────────────────
+// hyve-hotreload targets JDK 25 + HytaleServer.jar (unavailable in CI),
+// so we commit the pre-built JAR and bundle it as a static file.
+// Rebuild locally with: cd hyve-hotreload && ./gradlew shadowJar
 
-evaluationDependsOn(":hyve-hotreload")
-
-val hotreloadModJar = project(":hyve-hotreload").tasks.named("shadowJar")
+val bundledModsDir = rootProject.projectDir.resolve("bundled-mods")
 
 val copyHotreloadModJar by tasks.registering(Copy::class) {
-    from(hotreloadModJar)
+    from(bundledModsDir)
     into(layout.buildDirectory.dir("idea-sandbox/plugins/${intellijPlatform.projectName.get()}/bundled-mods"))
     dependsOn(tasks.named("prepareSandbox"))
 }
@@ -237,7 +238,7 @@ tasks.named("prepareSandbox") {
 
 // Include hot-reload mod JAR in the distribution ZIP
 tasks.named<Zip>("buildPlugin") {
-    from(hotreloadModJar) {
+    from(bundledModsDir) {
         into("bundled-mods")
     }
 }
