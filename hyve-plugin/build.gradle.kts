@@ -98,6 +98,12 @@ dependencies {
     testImplementation(libs.junit.jupiter)
 }
 
+// Kotlin stdlib and coroutines are provided by the IntelliJ platform — do not bundle them
+configurations.runtimeClasspath {
+    exclude(group = "org.jetbrains.kotlin")
+    exclude(group = "org.jetbrains.kotlinx")
+}
+
 // ── Workaround: bundledModule doesn't always add lib/modules/ JARs to classpath ──
 // Locate the IntelliJ platform path and add compose/jewel JARs manually.
 
@@ -195,10 +201,11 @@ evaluationDependsOn(":mcp-server")
 
 val mcpServerJar = project(":mcp-server").tasks.named("shadowJar")
 
-// Copy MCP server shadow JAR into sandbox (for runIde)
+// Copy MCP server shadow JAR into sandbox (for runIde) — placed in mcp-server/ to avoid
+// classloader conflicts (IntelliJ loads all JARs from lib/ into the plugin classloader)
 val copyMcpServerJar by tasks.registering(Copy::class) {
     from(mcpServerJar)
-    into(layout.buildDirectory.dir("idea-sandbox/plugins/${intellijPlatform.projectName.get()}/lib"))
+    into(layout.buildDirectory.dir("idea-sandbox/plugins/${intellijPlatform.projectName.get()}/mcp-server"))
     dependsOn(tasks.named("prepareSandbox"))
 }
 
@@ -209,6 +216,6 @@ tasks.named("prepareSandbox") {
 // Include MCP server shadow JAR in the distribution ZIP
 tasks.named<Zip>("buildPlugin") {
     from(mcpServerJar) {
-        into("lib")
+        into("mcp-server")
     }
 }

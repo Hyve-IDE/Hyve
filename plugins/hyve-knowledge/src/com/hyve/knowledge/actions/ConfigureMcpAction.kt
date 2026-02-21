@@ -68,9 +68,11 @@ class ConfigureMcpAction : AnAction() {
         val ideHome = com.intellij.openapi.application.PathManager.getHomePath()
 
         // 1. Installed plugin: look in the plugins directory
-        for (pluginDirName in listOf("hyve-plugin", "Hyve Toolkit", "com.hyve")) {
-            val candidate = File(pluginsDir, "$pluginDirName/lib/$jarName")
-            if (candidate.exists()) return candidate.absolutePath
+        for (pluginDirName in listOf("hyve-plugin", "Hyve", "Hyve Toolkit", "com.hyve")) {
+            for (subDir in listOf("mcp-server", "lib")) {
+                val candidate = File(pluginsDir, "$pluginDirName/$subDir/$jarName")
+                if (candidate.exists()) return candidate.absolutePath
+            }
         }
 
         // 2. Dev mode: check hyve-plugin build output relative to IDE home
