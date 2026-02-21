@@ -1,13 +1,13 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>com.hyve</id>
-  <name>Hyve Toolkit</name>
+  <name>Hyve</name>
   <vendor url="https://hyve.dev">Hyve</vendor>
   <category>Hyve</category>
   <version>1.0.0</version>
 
   <description><![CDATA[
     <p>
-    <b>Hyve Toolkit</b> — the all-in-one IDE plugin for Hytale modding.
+    <b>Hyve</b> — everything you need to build Hytale mods, right inside IntelliJ.
     </p>
     <ul>
       <li><b>UI Editor</b> — visual canvas for designing Hytale .ui interfaces</li>

@@ -152,7 +152,7 @@ kotlin {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "Hyve Toolkit"
+        name = "Hyve"
         ideaVersion {
             sinceBuild = "253"
             untilBuild = "253.*"
