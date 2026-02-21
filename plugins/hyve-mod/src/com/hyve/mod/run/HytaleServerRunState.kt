@@ -3,7 +3,7 @@ package com.hyve.mod.run
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.OSProcessHandler
+import com.intellij.execution.process.ColoredProcessHandler
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.ExecutionEnvironment
@@ -68,7 +68,7 @@ class HytaleServerRunState(
         cmd.workDirectory = serverDir
         cmd.charset = Charsets.UTF_8
 
-        val handler = OSProcessHandler(cmd)
+        val handler = ColoredProcessHandler(cmd)
         ProcessTerminatedListener.attach(handler)
         return handler
     }
