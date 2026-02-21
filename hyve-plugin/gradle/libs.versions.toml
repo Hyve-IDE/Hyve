@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.2.0"
-intellij-platform = "2.5.0"
+intellij-platform = "2.11.0"
 sqlite-jdbc = "3.47.2.0"
 javaparser = "3.26.3"
 jvector = "4.0.0-rc.8"

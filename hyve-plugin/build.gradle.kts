@@ -61,7 +61,7 @@ sourceSets {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2025.3.3", useInstaller = false)
+        intellijIdea("2025.3.3")
 
         // Bundled plugins required by our code
         bundledPlugin("com.intellij.modules.json")
@@ -81,7 +81,6 @@ dependencies {
         bundledPlugin("com.intellij.mcpServer")
 
         pluginVerifier()
-        instrumentationTools()
         testFramework(TestFrameworkType.Platform)
     }
 
