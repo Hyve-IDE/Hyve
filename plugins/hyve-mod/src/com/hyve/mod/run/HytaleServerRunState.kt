@@ -7,6 +7,8 @@ import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.util.execution.ParametersListUtil
@@ -28,6 +30,8 @@ class HytaleServerRunState(
         if (!serverJar.isFile) {
             throw ExecutionException("HytaleServer.jar not found at ${serverJar.absolutePath}")
         }
+
+        deployBundledHotreloadMod(serverDir)
 
         val javaExe = resolveJava()
         val cmd = GeneralCommandLine(javaExe)
@@ -80,7 +84,36 @@ class HytaleServerRunState(
         return "java"
     }
 
+    private fun deployBundledHotreloadMod(serverDir: File) {
+        try {
+            val jarName = "hyve-hotreload.jar"
+            val bundledJar = findBundledJar(jarName)
+            if (bundledJar == null) {
+                LOG.warn("Bundled hot-reload mod not found in plugin installation")
+                return
+            }
+
+            val modsDir = File(serverDir, "mods")
+            modsDir.mkdirs()
+            bundledJar.copyTo(File(modsDir, jarName), overwrite = true)
+            LOG.info("Deployed bundled hot-reload mod to ${modsDir.absolutePath}")
+        } catch (e: Exception) {
+            LOG.warn("Failed to deploy bundled hot-reload mod", e)
+        }
+    }
+
+    private fun findBundledJar(jarName: String): File? {
+        val pluginsDir = PathManager.getPluginsPath()
+        LOG.info("Searching for bundled mod in plugins dir: $pluginsDir")
+        for (dirName in listOf("hyve-plugin", "Hyve", "com.hyve")) {
+            val candidate = File("$pluginsDir/$dirName/bundled-mods/$jarName")
+            if (candidate.exists()) return candidate
+        }
+        return null
+    }
+
     companion object {
+        private val LOG = Logger.getInstance(HytaleServerRunState::class.java)
         private val MAJOR_VERSION_REGEX = Regex("""(?:^|version\s+\"?)(\d+)""")
 
         fun parseMajorVersion(versionString: String): Int? {
