@@ -218,3 +218,26 @@ tasks.named<Zip>("buildPlugin") {
         into("mcp-server")
     }
 }
+
+// ── Copy bundled hot-reload mod JAR into plugin sandbox ──────────────────
+
+evaluationDependsOn(":hyve-hotreload")
+
+val hotreloadModJar = project(":hyve-hotreload").tasks.named("shadowJar")
+
+val copyHotreloadModJar by tasks.registering(Copy::class) {
+    from(hotreloadModJar)
+    into(layout.buildDirectory.dir("idea-sandbox/plugins/${intellijPlatform.projectName.get()}/bundled-mods"))
+    dependsOn(tasks.named("prepareSandbox"))
+}
+
+tasks.named("prepareSandbox") {
+    finalizedBy(copyHotreloadModJar)
+}
+
+// Include hot-reload mod JAR in the distribution ZIP
+tasks.named<Zip>("buildPlugin") {
+    from(hotreloadModJar) {
+        into("bundled-mods")
+    }
+}

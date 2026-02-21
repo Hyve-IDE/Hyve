@@ -1,0 +1,14 @@
+{
+  "Group": "com.hyve",
+  "Name": "hyve-hotreload",
+  "Version": "1.0.0",
+  "Main": "com.hyve.hyvehotreload.HyveHotreloadPlugin",
+  "ServerVersion": "*",
+  "Description": "Hot-reload support for Hyve IDE",
+  "Authors": [
+    {
+      "Name": "Logan McDuffie",
+      "Url": "https://github.com/Hyve-IDE/Hyve"
+    }
+  ]
+}

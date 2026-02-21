@@ -9,3 +9,4 @@ pluginManagement {
 }
 
 include("mcp-server")
+include("hyve-hotreload")
