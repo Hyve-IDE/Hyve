@@ -167,11 +167,10 @@ object HytaleModTemplates {
     }
 
     fun runServerConfiguration(ctx: ModTemplateContext): String =
-        serverConfiguration(ctx, "Run Hytale Server", "--enable-native-access=ALL-UNNAMED")
+        serverConfiguration(ctx, "Run Hytale Server", enableDebug = false)
 
     fun debugServerConfiguration(ctx: ModTemplateContext): String =
-        serverConfiguration(ctx, "Debug Hytale Server",
-            "--enable-native-access=ALL-UNNAMED -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+        serverConfiguration(ctx, "Debug Hytale Server", enableDebug = true)
 
     fun buildModConfiguration(): String = buildString {
         val pd = "\$PROJECT_DIR\$"
@@ -196,19 +195,17 @@ object HytaleModTemplates {
         appendLine("""</component>""")
     }
 
-    private fun serverConfiguration(ctx: ModTemplateContext, name: String, vmParameters: String): String = buildString {
+    private fun serverConfiguration(ctx: ModTemplateContext, name: String, enableDebug: Boolean): String = buildString {
         val installPath = toForwardSlashes(ctx.hytaleInstallPath)
         val pd = "\$PROJECT_DIR\$"
-        val jarPath = "$installPath/Server/HytaleServer.jar"
         val programArgs = "--assets $installPath/Assets.zip --allow-op --disable-sentry"
         appendLine("""<component name="ProjectRunConfigurationManager">""")
-        appendLine("""  <configuration default="false" name="${escapeXml(name)}" type="JarApplication">""")
-        appendLine("""    <option name="ALTERNATIVE_JRE_PATH" value="${HytaleVersions.JDK}" />""")
-        appendLine("""    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />""")
-        appendLine("""    <option name="JAR_PATH" value="${escapeXml(jarPath)}" />""")
-        appendLine("""    <option name="PROGRAM_PARAMETERS" value="${escapeXml(programArgs)}" />""")
-        appendLine("""    <option name="WORKING_DIRECTORY" value="${escapeXml("$installPath/Server")}" />""")
-        appendLine("""    <option name="VM_PARAMETERS" value="${escapeXml(vmParameters)}" />""")
+        appendLine("""  <configuration default="false" name="${escapeXml(name)}" type="HytaleServerRunConfiguration">""")
+        appendLine("""    <option name="installPath" value="${escapeXml(installPath)}" />""")
+        appendLine("""    <option name="enableDebug" value="$enableDebug" />""")
+        appendLine("""    <option name="debugPort" value="5005" />""")
+        appendLine("""    <option name="vmArgs" value="--enable-native-access=ALL-UNNAMED" />""")
+        appendLine("""    <option name="programArgs" value="${escapeXml(programArgs)}" />""")
         appendLine("""    <method v="2">""")
         appendLine("""      <option name="Gradle.BeforeRunTask" enabled="true" tasks="deployMod" externalProjectPath="$pd" />""")
         appendLine("""    </method>""")
