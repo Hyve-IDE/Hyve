@@ -30,9 +30,6 @@ tasks.shadowJar {
     archiveBaseName.set("hyve-hotreload")
     archiveClassifier.set("")
     archiveVersion.set("")
-    dependencies {
-        exclude(dependency("org.jetbrains.kotlin:.*"))
-    }
 }
 
 tasks.register<Copy>("deployMod") {
