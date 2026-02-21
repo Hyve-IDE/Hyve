@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.hyve"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -160,9 +160,13 @@ intellijPlatform {
     }
 
     signing {
-        certificateChainFile = file("chain.crt")
-        privateKeyFile = file("private.pem")
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
         password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
     }
 
     pluginVerification {
