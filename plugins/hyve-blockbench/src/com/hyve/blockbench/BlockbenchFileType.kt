@@ -11,6 +11,8 @@ object BlockbenchFileType : LanguageFileType(JsonLanguage.INSTANCE), FileTypeIde
 
     override fun getName(): String = "Hytale Model"
 
+    override fun getDisplayName(): String = "Hytale Model"
+
     override fun getDescription(): String = "Hytale model or animation file"
 
     override fun getDefaultExtension(): String = "blockymodel"

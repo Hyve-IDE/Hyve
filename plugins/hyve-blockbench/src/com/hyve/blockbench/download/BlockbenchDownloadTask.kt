@@ -82,9 +82,27 @@ class BlockbenchDownloadTask(
             }
         }
 
+        indicator.fraction = 0.85
+
+        // Phase 3: Patch index.html to bypass browser compatibility check
+        // Blockbench's trailing <script type="module"> declares a local `browser_check_passed`
+        // and tests eval('[1].at(0)') + stylesheet.sheet.cssRules (fails on file:// protocol).
+        // Replace the entire check block so it never shows the "Incompatible browser" error.
+        indicator.text = "Patching for embedded browser..."
+        val indexHtml = File(cacheDir, "index.html")
+        if (indexHtml.exists()) {
+            var html = indexHtml.readText(Charsets.UTF_8)
+            // Replace the browser check module script with a no-op
+            html = html.replace(
+                Regex("""<script type="module">\s*let browser_check_passed.*?</script>""", RegexOption.DOT_MATCHES_ALL),
+                "<script type=\"module\">/* browser check removed for JCEF embedding */</script>",
+            )
+            indexHtml.writeText(html, Charsets.UTF_8)
+        }
+
         indicator.fraction = 0.9
 
-        // Phase 3: Verify
+        // Phase 4: Verify
         if (!BlockbenchBundle.isAvailable()) {
             throw RuntimeException("Extraction completed but index.html not found in ${cacheDir.absolutePath}")
         }

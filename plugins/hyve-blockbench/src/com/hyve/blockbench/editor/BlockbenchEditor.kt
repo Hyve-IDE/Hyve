@@ -3,6 +3,9 @@ package com.hyve.blockbench.editor
 import com.hyve.blockbench.bridge.BlockbenchBridge
 import com.hyve.blockbench.download.BlockbenchBundle
 import com.hyve.blockbench.download.BlockbenchDownloadTask
+import com.hyve.blockbench.download.BlockbenchServer
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.project.Project
@@ -10,6 +13,8 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
+import com.intellij.ui.jcef.JBCefBrowserBuilder
+import com.intellij.util.messages.MessageBusConnection
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import javax.swing.*
@@ -24,20 +29,41 @@ class BlockbenchEditor(
     private var modified = false
     private val pcs = PropertyChangeSupport(this)
     private val component: JComponent
+    private val busConnection: MessageBusConnection?
 
     init {
         if (BlockbenchBundle.isAvailable() && JBCefApp.isSupported()) {
-            browser = JBCefBrowser()
-            bridge = BlockbenchBridge(browser, file, project) { mod ->
+            browser = JBCefBrowserBuilder()
+                .setOffScreenRendering(false)
+                .build()
+            // Set initial 60fps default; the bridge will sync to Blockbench's FPS Limit setting once loaded.
+            // CefBrowserWr (remote mode) requires a post-creation call to push the rate to the remote CEF process.
+            browser.cefBrowser.setWindowlessFrameRate(60)
+            // Serve via local HTTP to avoid CORS issues with file:// and ES modules
+            val port = BlockbenchServer.ensureRunning()
+            val baseUrl = "http://127.0.0.1:$port"
+            bridge = BlockbenchBridge(browser, file, project, baseUrl) { mod ->
                 val old = modified
                 modified = mod
                 pcs.firePropertyChange("modified", old, mod)
             }
-            browser.loadURL(BlockbenchBundle.indexHtmlUrl())
+            browser.loadURL("$baseUrl/index.html")
             component = browser.component
+
+            // IntelliJ intercepts Ctrl+S before it reaches JCEF, so listen for IDE-level
+            // save events and forward them to the Blockbench bridge.
+            busConnection = ApplicationManager.getApplication().messageBus.connect()
+            busConnection.subscribe(FileDocumentManagerListener.TOPIC, object : FileDocumentManagerListener {
+                override fun beforeAllDocumentsSaving() {
+                    if (modified) {
+                        bridge.save()
+                    }
+                }
+            })
         } else {
             browser = null
             bridge = null
+            busConnection = null
             component = createFallbackPanel()
         }
     }
@@ -99,6 +125,7 @@ class BlockbenchEditor(
     }
 
     override fun dispose() {
+        busConnection?.disconnect()
         bridge?.dispose()
         browser?.dispose()
     }

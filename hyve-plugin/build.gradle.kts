@@ -55,6 +55,7 @@ sourceSets {
             root.resolve("plugins/hyve-knowledge/testSrc"),
             root.resolve("plugins/hyve-knowledge/core/testSrc"),
             root.resolve("plugins/hyve-knowledge/mcp-server/testSrc"),
+            root.resolve("plugins/hyve-blockbench/testSrc"),
         )
     }
 }
