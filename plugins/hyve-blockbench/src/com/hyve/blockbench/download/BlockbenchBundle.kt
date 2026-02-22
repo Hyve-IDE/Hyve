@@ -5,7 +5,7 @@ import java.io.File
 object BlockbenchBundle {
 
     private const val DOWNLOAD_URL =
-        "https://github.com/LoganOneal/hyve-blockbench-web/releases/latest/download/blockbench-web.zip"
+        "https://github.com/Hyve-IDE/hyve-blockbench-web/releases/latest/download/blockbench-web.zip"
 
     fun cacheDir(): File = File(System.getProperty("user.home"), ".hyve/blockbench")
 
