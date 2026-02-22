@@ -434,10 +434,11 @@ class CanvasPainter(
         val CANVAS_BACKGROUND = Color(0xFFF5F5F5)
         val CANVAS_BACKGROUND_DARK = Color(0xFF0A0A12)
 
-        // Default colors
+        // Default colors — match Hytale engine rendering for unstyled elements
+        // Sourced from Client/Data/Game/UI/DesignSystem/Colors.xaml
         val DEFAULT_BACKGROUND = Color(0xFFEEEEEE)
-        val DEFAULT_BORDER = Color(0xFF999999)
-        val DEFAULT_TEXT = Color(0xFF000000)
+        val DEFAULT_BORDER = Color(0xFF434E65.toInt())   // Blue800
+        val DEFAULT_TEXT = Color(0xFFD1DAE6.toInt())      // Blue50 - Color.Text
         val SELECTION_COLOR = Color(0xFF2196F3)
         val SELECTION_STROKE_WIDTH = 2f
 
@@ -456,12 +457,12 @@ class CanvasPainter(
 
         // Button styling
         const val BUTTON_CORNER_RADIUS = 4f
-        val BUTTON_BACKGROUND = Color(0xFF2196F3)
-        val BUTTON_TEXT_COLOR = Color.White
+        val BUTTON_BACKGROUND = Color.Transparent     // Unstyled buttons have no background
+        val BUTTON_TEXT_COLOR = Color(0xFFD1DAE6.toInt()) // Blue50
 
         // TextField styling
-        val TEXTFIELD_BACKGROUND = Color.White
-        val TEXTFIELD_BORDER = Color(0xFFCCCCCC)
+        val TEXTFIELD_BACKGROUND = Color.Transparent  // Unstyled text fields have no background
+        val TEXTFIELD_BORDER = Color.Transparent       // No border when unstyled
 
         // Viewport indicator styling
         val VIEWPORT_BORDER_COLOR = Color(0xFF4CAF50) // Green border for safe zone
@@ -1368,12 +1369,14 @@ class CanvasPainter(
                 ?: styleBackground?.let { colorFromValue(it, BUTTON_BACKGROUND) }
                 ?: BUTTON_BACKGROUND
 
-            drawRoundRect(
-                color = backgroundColor,
-                topLeft = position,
-                size = Size(width, height),
-                cornerRadius = CornerRadius(BUTTON_CORNER_RADIUS * state.zoom.value)
-            )
+            if (backgroundColor != Color.Transparent) {
+                drawRoundRect(
+                    color = backgroundColor,
+                    topLeft = position,
+                    size = Size(width, height),
+                    cornerRadius = CornerRadius(BUTTON_CORNER_RADIUS * state.zoom.value)
+                )
+            }
         }
 
         // Icon: texture image on the button (from flat Icon property or Style.Default.Icon)
@@ -1682,20 +1685,24 @@ class CanvasPainter(
 
         // Draw default background only if caller didn't already draw a styled one
         if (!skipBackground) {
-            drawRoundRect(
-                color = TEXTFIELD_BACKGROUND,
-                topLeft = position,
-                size = Size(width, height),
-                cornerRadius = CornerRadius(2f * zoom)
-            )
+            if (TEXTFIELD_BACKGROUND != Color.Transparent) {
+                drawRoundRect(
+                    color = TEXTFIELD_BACKGROUND,
+                    topLeft = position,
+                    size = Size(width, height),
+                    cornerRadius = CornerRadius(2f * zoom)
+                )
+            }
 
-            drawRoundRect(
-                color = TEXTFIELD_BORDER,
-                topLeft = position,
-                size = Size(width, height),
-                cornerRadius = CornerRadius(2f * zoom),
-                style = Stroke(width = 1f * zoom)
-            )
+            if (TEXTFIELD_BORDER != Color.Transparent) {
+                drawRoundRect(
+                    color = TEXTFIELD_BORDER,
+                    topLeft = position,
+                    size = Size(width, height),
+                    cornerRadius = CornerRadius(2f * zoom),
+                    style = Stroke(width = 1f * zoom)
+                )
+            }
         }
 
         // Skip text if this element is being text-edited (the overlay handles it)
