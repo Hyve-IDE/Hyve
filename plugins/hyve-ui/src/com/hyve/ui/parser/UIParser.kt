@@ -199,13 +199,14 @@ class UIParser(
                     // Element-based style: TypeName { ... }
                     check(TokenType.LEFT_BRACE) -> {
                         consume(TokenType.LEFT_BRACE, "Expected '{' after type name")
-                        val (properties, _) = parseElementBody()
+                        val (properties, children) = parseElementBody()
                         consume(TokenType.RIGHT_BRACE, "Expected '}' after style element body")
                         consume(TokenType.SEMICOLON, "Expected ';' after style definition")
                         StyleDefinition(
                             name = styleName,
                             properties = properties,
-                            elementType = typeName
+                            elementType = typeName,
+                            children = children
                         )
                     }
                     else -> {
@@ -554,6 +555,8 @@ class UIParser(
         consume(TokenType.EQUALS, "Expected '=' after style name")
 
         // Parse style body - can be tuple, type constructor, element-based, or simple value
+        var elementChildren: List<UIElement> = emptyList()
+
         val (properties, elementType) = when {
             check(TokenType.LEFT_PAREN) && isTupleAhead() -> parseInlineStyle() to null
             // Type constructor: TypeName(...)
@@ -565,8 +568,9 @@ class UIParser(
             check(TokenType.IDENTIFIER) && peekNext()?.type == TokenType.LEFT_BRACE -> {
                 val typeName = advance().lexeme
                 consume(TokenType.LEFT_BRACE, "Expected '{' after type name")
-                val (bodyProps, _) = parseElementBody()
+                val (bodyProps, bodyChildren) = parseElementBody()
                 consume(TokenType.RIGHT_BRACE, "Expected '}' after style element body")
+                elementChildren = bodyChildren
                 bodyProps to typeName
             }
             // Simple values like @Label = ""; or @Min = 0; or expressions
@@ -588,7 +592,8 @@ class UIParser(
         return StyleDefinition(
             name = styleName,
             properties = properties,
-            elementType = elementType
+            elementType = elementType,
+            children = elementChildren
         )
     }
 
@@ -1179,13 +1184,9 @@ class UIParser(
                     AnchorDimension.Relative(value.ratio.toFloat())
                 }
                 is PropertyValue.Number -> {
-                    val num = value.value
-                    // Numbers 0.0-1.0 are treated as relative, larger as absolute pixels
-                    if (num in 0.0..1.0) {
-                        AnchorDimension.Relative(num.toFloat())
-                    } else {
-                        AnchorDimension.Absolute(num.toFloat())
-                    }
+                    // Bare numbers (without %) are always absolute pixels.
+                    // Only PropertyValue.Percent (e.g. "50%") produces Relative dimensions.
+                    AnchorDimension.Absolute(value.value.toFloat())
                 }
                 else -> null
             }

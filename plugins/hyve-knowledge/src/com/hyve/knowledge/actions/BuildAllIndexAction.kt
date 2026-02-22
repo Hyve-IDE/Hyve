@@ -30,6 +30,7 @@ class BuildAllIndexAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        if (!MemoryCheckUtil.checkHeapAndWarn(project)) return
         ProgressManager.getInstance().run(BuildAllTask(project))
     }
 

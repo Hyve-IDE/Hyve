@@ -190,4 +190,44 @@ class CanvasPainterTupleResolutionTest {
         val missingOuter = outerTuple.get("NonExistent") as? PropertyValue.Tuple
         assertThat(missingOuter).isNull()
     }
+
+    // --- extractTexturePath ---
+
+    @Test
+    fun `extractTexturePath returns path from Text value`() {
+        val text = PropertyValue.Text("textures/overlay.png")
+        assertThat(extractTexturePath(text)).isEqualTo("textures/overlay.png")
+    }
+
+    @Test
+    fun `extractTexturePath returns path from Tuple with TexturePath`() {
+        val tuple = PropertyValue.Tuple(mapOf(
+            "TexturePath" to PropertyValue.Text("textures/bg.png"),
+            "Border" to PropertyValue.Number(8.0)
+        ))
+        assertThat(extractTexturePath(tuple)).isEqualTo("textures/bg.png")
+    }
+
+    @Test
+    fun `extractTexturePath returns null for null input`() {
+        assertThat(extractTexturePath(null)).isNull()
+    }
+
+    @Test
+    fun `extractTexturePath returns null for blank text`() {
+        assertThat(extractTexturePath(PropertyValue.Text(""))).isNull()
+        assertThat(extractTexturePath(PropertyValue.Text("  "))).isNull()
+    }
+
+    @Test
+    fun `extractTexturePath returns null for non-path types`() {
+        assertThat(extractTexturePath(PropertyValue.Number(42.0))).isNull()
+        assertThat(extractTexturePath(PropertyValue.Boolean(true))).isNull()
+    }
+
+    @Test
+    fun `extractTexturePath returns path from ImagePath`() {
+        val imgPath = PropertyValue.ImagePath("assets/icon.png")
+        assertThat(extractTexturePath(imgPath)).isEqualTo("assets/icon.png")
+    }
 }

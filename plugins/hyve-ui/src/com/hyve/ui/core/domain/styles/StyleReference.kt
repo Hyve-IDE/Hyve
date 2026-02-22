@@ -1,5 +1,6 @@
 package com.hyve.ui.core.domain.styles
 
+import com.hyve.ui.core.domain.elements.UIElement
 import com.hyve.ui.core.domain.properties.PropertyValue
 import com.hyve.ui.core.id.ImportAlias
 import com.hyve.ui.core.id.PropertyName
@@ -68,7 +69,8 @@ data class StyleDefinition(
     val properties: Map<PropertyName, PropertyValue>,
     val typeName: String? = null,
     val elementType: String? = null,
-    val sourceFile: ImportAlias? = null
+    val sourceFile: ImportAlias? = null,
+    val children: List<UIElement> = emptyList()
 ) {
     override fun toString(): String {
         val prefix = if (sourceFile != null) "${sourceFile.value}." else ""

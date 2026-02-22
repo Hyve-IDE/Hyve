@@ -24,6 +24,8 @@ class BuildIndexAction : AnAction() {
             return
         }
 
+        if (!MemoryCheckUtil.checkHeapAndWarn(project)) return
+
         ProgressManager.getInstance().run(IndexerTask(project))
     }
 

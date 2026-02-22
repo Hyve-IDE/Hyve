@@ -23,6 +23,8 @@ class IndexGameDataAction : AnAction() {
             return
         }
 
+        if (!MemoryCheckUtil.checkHeapAndWarn(project)) return
+
         ProgressManager.getInstance().run(GameDataIndexerTask(project))
     }
 

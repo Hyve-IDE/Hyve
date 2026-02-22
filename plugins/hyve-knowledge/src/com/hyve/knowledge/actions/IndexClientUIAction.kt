@@ -36,6 +36,8 @@ class IndexClientUIAction : AnAction() {
             return
         }
 
+        if (!MemoryCheckUtil.checkHeapAndWarn(project)) return
+
         ProgressManager.getInstance().run(ClientUIIndexerTask(project))
     }
 

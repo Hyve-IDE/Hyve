@@ -5,6 +5,7 @@ package com.hyve.ui.rendering.layout
 import com.hyve.ui.core.domain.elements.UIElement
 import com.hyve.ui.core.domain.properties.PropertyValue
 import com.hyve.ui.core.domain.anchor.AnchorDimension
+import com.hyve.ui.rendering.painter.resolveStyleToTuple
 import com.hyve.ui.schema.SchemaRegistry
 
 /**
@@ -19,11 +20,22 @@ private data class PaddingValues(
 )
 
 /**
+ * Resolve a property from an element, falling back to the Style tuple.
+ * In Hytale, style references like $C.@Container carry layout properties
+ * (LayoutMode, Padding, Spacing, etc.) inside the resolved Style tuple.
+ */
+private fun resolveProperty(element: UIElement, name: String): PropertyValue? {
+    element.getProperty(name)?.let { return it }
+    val styleTuple = resolveStyleToTuple(element.getProperty("Style")) ?: return null
+    return styleTuple.values[name]
+}
+
+/**
  * Read padding from an element's Padding property.
  * Supports shorthand forms: Full, Horizontal, Vertical.
  */
 private fun readPadding(element: UIElement): PaddingValues {
-    val padding = element.getProperty("Padding") as? PropertyValue.Tuple ?: return PaddingValues()
+    val padding = resolveStyleToTuple(resolveProperty(element, "Padding")) ?: return PaddingValues()
     val values = padding.values
 
     fun findFloat(key: String): Float? =
@@ -123,8 +135,8 @@ class LayoutEngine(private val schema: SchemaRegistry) {
         parentBounds: Rect,
         siblings: List<UIElement> = emptyList()
     ): ElementBounds {
-        // Check if element has LayoutMode property (only Groups/containers)
-        val layoutMode = element.getProperty("LayoutMode") as? PropertyValue.Text
+        // Check if element has LayoutMode property (direct or via Style tuple)
+        val layoutMode = resolveProperty(element, "LayoutMode") as? PropertyValue.Text
 
         val bounds = when (layoutMode?.value) {
             "Top", "Left", "Right", "Bottom",
@@ -150,8 +162,8 @@ class LayoutEngine(private val schema: SchemaRegistry) {
         }
 
         // Apply MinWidth/MaxWidth constraints
-        val minWidth = (element.getProperty("MinWidth") as? PropertyValue.Number)?.value?.toFloat()
-        val maxWidth = (element.getProperty("MaxWidth") as? PropertyValue.Number)?.value?.toFloat()
+        val minWidth = (resolveProperty(element, "MinWidth") as? PropertyValue.Number)?.value?.toFloat()
+        val maxWidth = (resolveProperty(element, "MaxWidth") as? PropertyValue.Number)?.value?.toFloat()
         val clampedBounds = if (minWidth != null || maxWidth != null) {
             val currentWidth = bounds.width
             val newWidth = currentWidth
@@ -181,8 +193,8 @@ class LayoutEngine(private val schema: SchemaRegistry) {
         val bounds = calculateBounds(element, parentBounds)
         results[element] = bounds
 
-        // If element is a container with LayoutMode, children stack/flow automatically
-        val layoutMode = (element.getProperty("LayoutMode") as? PropertyValue.Text)?.value
+        // If element is a container with LayoutMode (direct or via Style), children stack/flow
+        val layoutMode = (resolveProperty(element, "LayoutMode") as? PropertyValue.Text)?.value
         if (layoutMode != null && layoutMode in MANAGED_LAYOUT_MODES) {
             // Apply padding to get the content area for children
             val padding = readPadding(element)
@@ -235,7 +247,7 @@ class LayoutEngine(private val schema: SchemaRegistry) {
     ) {
         val isVertical = layoutMode in setOf("Top", "Bottom", "TopScrolling", "BottomScrolling")
         val isReversed = layoutMode in setOf("Bottom", "Right", "BottomScrolling")
-        val spacing = (element.getProperty("Spacing") as? PropertyValue.Number)?.value?.toFloat() ?: 0f
+        val spacing = (resolveProperty(element, "Spacing") as? PropertyValue.Number)?.value?.toFloat() ?: 0f
         val totalSpace = if (isVertical) contentArea.height else contentArea.width
 
         // Pass 1: measure fixed children and collect flex weights

@@ -96,6 +96,23 @@ internal fun resolveStyleToTuple(value: PropertyValue?): PropertyValue.Tuple? {
 }
 
 /**
+ * Extract a texture path from a PropertyValue that may be:
+ * - PropertyValue.Text: direct path string (e.g., "TabOverlay.png")
+ * - PropertyValue.Tuple: texture descriptor (e.g., (TexturePath: "bg.png", Border: 8))
+ * - PropertyValue.ImagePath: resolved image path
+ * Returns null if no path can be extracted.
+ */
+internal fun extractTexturePath(value: PropertyValue?): String? = when (value) {
+    is PropertyValue.Text -> value.value.takeIf { it.isNotBlank() }
+    is PropertyValue.ImagePath -> value.path.takeIf { it.isNotBlank() }
+    is PropertyValue.Tuple -> {
+        (value.get("TexturePath") as? PropertyValue.Text)?.value
+            ?: (value.get("TexturePath") as? PropertyValue.ImagePath)?.path
+    }
+    else -> null
+}
+
+/**
  * Read a Color property from a UIElement, with fallback to default.
  * Handles PropertyValue.Color, hex strings in PropertyValue.Text and Unknown,
  * including the Hytale #RRGGBB(alpha) format.
@@ -146,6 +163,25 @@ internal fun UIElement.textProperty(name: String, default: String): String {
         else -> default
     }
 }
+
+/** Resolve a property from element, falling back to its Style tuple. */
+internal fun UIElement.resolveFromStyle(name: String): PropertyValue? {
+    getProperty(name)?.let { return it }
+    val style = resolveStyleToTuple(getProperty("Style")) ?: return null
+    return style.get(name)
+}
+
+internal fun UIElement.styledColorProperty(name: String, default: Color): Color =
+    colorFromValue(resolveFromStyle(name), default)
+
+internal fun UIElement.styledNumberProperty(name: String, default: Float): Float =
+    (resolveFromStyle(name) as? PropertyValue.Number)?.value?.toFloat() ?: default
+
+internal fun UIElement.styledBooleanProperty(name: String, default: Boolean): Boolean =
+    (resolveFromStyle(name) as? PropertyValue.Boolean)?.value ?: default
+
+internal fun UIElement.styledTextProperty(name: String, default: String): String =
+    (resolveFromStyle(name) as? PropertyValue.Text)?.value ?: default
 
 /**
  * Extract mask texture path from MaskTexturePath property.
@@ -836,6 +872,9 @@ class CanvasPainter(
         val bounds = state.getBounds(element) ?: layout[element] ?: return
         if (!bounds.visible) return
 
+        // Game-authored Visible property: skip element AND children (WPF Collapsed behavior)
+        if (!element.booleanProperty("Visible", true)) return
+
         // Convert canvas coordinates to screen coordinates
         val screenPos = state.canvasToScreen(bounds.x, bounds.y)
         val zoom = state.zoom.value
@@ -866,11 +905,13 @@ class CanvasPainter(
 
         // Only draw if element is at least partially visible
         if (!isOffScreen) {
-            // Opacity: apply alpha layer wrapper when Opacity < 1.0
-            val opacity = element.numberProperty("Opacity", 1f)
-            if (opacity < 1f) {
+            // Opacity + Enabled: compose into single effective opacity
+            val opacity = element.styledNumberProperty("Opacity", 1f)
+            val enabled = element.booleanProperty("Enabled", true)
+            val effectiveOpacity = if (enabled) opacity else (opacity * 0.5f)
+            if (effectiveOpacity < 1f) {
                 drawIntoCanvas { canvas ->
-                    val paint = Paint().apply { alpha = opacity.coerceIn(0f, 1f) }
+                    val paint = Paint().apply { alpha = effectiveOpacity.coerceIn(0f, 1f) }
                     canvas.saveLayer(
                         androidx.compose.ui.geometry.Rect(screenPos.x, screenPos.y,
                             screenPos.x + screenWidth, screenPos.y + screenHeight),
@@ -929,7 +970,7 @@ class CanvasPainter(
             }
 
             // Restore canvas state BEFORE selection highlight (so selection is always visible)
-            if (opacity < 1f) {
+            if (effectiveOpacity < 1f) {
                 drawIntoCanvas { canvas -> canvas.restore() }
             }
 
@@ -1086,7 +1127,8 @@ class CanvasPainter(
         if (width <= 1f || height <= 1f) return
 
         // Apply element Padding to inset the text area
-        val padTuple = element.getProperty("Padding") as? PropertyValue.Tuple
+        val padTuple = resolveStyleToTuple(element.getProperty("Padding")
+            ?: resolveStyleToTuple(element.getProperty("Style"))?.get("Padding"))
         val padLeft = (padTuple?.get("Left") ?: padTuple?.get("Horizontal") ?: padTuple?.get("Full"))
             .let { (it as? PropertyValue.Number)?.value?.toFloat() ?: 0f } * state.zoom.value
         val padRight = (padTuple?.get("Right") ?: padTuple?.get("Horizontal") ?: padTuple?.get("Full"))
@@ -1230,7 +1272,7 @@ class CanvasPainter(
         // Button Style: (Default: (LabelStyle: (...), Background: #fff(0.15)), Hovered: (...), ...)
         // Handles both inline tuples and @StyleRef references via resolveStyleToTuple
         val styleTuple = resolveStyleToTuple(element.getProperty("Style"))
-        val defaultState = styleTuple?.get("Default") as? PropertyValue.Tuple
+        val defaultState = resolveStyleToTuple(styleTuple?.get("Default"))
         val labelStyle = resolveStyleToTuple(defaultState?.get("LabelStyle"))
 
         // Background: from Style.Default.Background, flat Background property, or default
@@ -1547,13 +1589,13 @@ class CanvasPainter(
         // Check for Decoration or TextFieldDecoration property
         val decoration = resolveStyleToTuple(element.getProperty("Decoration"))
             ?: resolveStyleToTuple(element.getProperty("TextFieldDecoration"))
-        val decorDefault = decoration?.get("Default") as? PropertyValue.Tuple
+        val decorDefault = resolveStyleToTuple(decoration?.get("Default"))
 
         // Draw decoration background (nine-patch) if present and no Background was drawn
         var textOffset = 0f
         if (decorDefault != null) {
             if (!backgroundDrawn) {
-                val decorBg = decorDefault.get("Background") as? PropertyValue.Tuple
+                val decorBg = resolveStyleToTuple(decorDefault.get("Background"))
                 if (decorBg != null) {
                     val texPath = (decorBg.get("TexturePath") as? PropertyValue.Text)?.value
                     val border = (decorBg.get("Border") as? PropertyValue.Number)?.value?.toFloat() ?: 0f
@@ -1590,12 +1632,9 @@ class CanvasPainter(
             }
 
             // Draw decoration icon if present
-            val iconTuple = decorDefault.get("Icon") as? PropertyValue.Tuple
+            val iconTuple = resolveStyleToTuple(decorDefault.get("Icon"))
             if (iconTuple != null) {
-                val iconTexture = (iconTuple.get("Texture") as? PropertyValue.Text)?.value
-                    ?: (iconTuple.get("Texture") as? PropertyValue.Tuple)?.let {
-                        (it.get("TexturePath") as? PropertyValue.Text)?.value
-                    }
+                val iconTexture = extractTexturePath(iconTuple.get("Texture"))
                 val iconW = (iconTuple.get("Width") as? PropertyValue.Number)?.value?.toFloat() ?: 16f
                 val iconH = (iconTuple.get("Height") as? PropertyValue.Number)?.value?.toFloat() ?: 16f
                 val iconOffset = (iconTuple.get("Offset") as? PropertyValue.Number)?.value?.toFloat() ?: 4f
@@ -1674,11 +1713,24 @@ class CanvasPainter(
         val textColor = activeStyle?.get("TextColor")?.let { colorFromValue(it, DEFAULT_TEXT) } ?: DEFAULT_TEXT
         val fontSize = (activeStyle?.get("FontSize") as? PropertyValue.Number)?.value?.toFloat() ?: 14f
         val renderBold = (activeStyle?.get("RenderBold") as? PropertyValue.Boolean)?.value ?: false
+        val renderItalic = (activeStyle?.get("RenderItalics") as? PropertyValue.Boolean)?.value
+            ?: element.booleanProperty("RenderItalics", false)
+        val renderUppercase = (activeStyle?.get("RenderUppercase") as? PropertyValue.Boolean)?.value
+            ?: element.booleanProperty("RenderUppercase", false)
+        val fontName = (activeStyle?.get("FontName") as? PropertyValue.Text)?.value
+            ?: element.textProperty("FontName", "")
+        val fontFamily = when (fontName.lowercase()) {
+            "secondary" -> FontFamily.Serif
+            "monospace" -> FontFamily.Monospace
+            else -> FontFamily.SansSerif
+        }
 
         val textStyle = TextStyle(
             color = textColor,
             fontSize = (fontSize * zoom).sp,
-            fontWeight = if (renderBold) FontWeight.Bold else FontWeight.Normal
+            fontFamily = fontFamily,
+            fontWeight = if (renderBold) FontWeight.Bold else FontWeight.Normal,
+            fontStyle = if (renderItalic) FontStyle.Italic else FontStyle.Normal
         )
 
         val textPos = position + Offset(4f * zoom, 4f * zoom)
@@ -1690,7 +1742,8 @@ class CanvasPainter(
 
         // Apply PasswordChar masking
         val passwordChar = element.textProperty("PasswordChar", "")
-        val displayText = applyPasswordMask(rawDisplayText, passwordChar, element.textProperty("PlaceholderText", ""))
+        val maskedText = applyPasswordMask(rawDisplayText, passwordChar, element.textProperty("PlaceholderText", ""))
+        val displayText = if (renderUppercase) maskedText.uppercase() else maskedText
 
         if (displayText.isNotEmpty()) {
             val textLayout = measureTextCached(displayText, textStyle)
@@ -1919,13 +1972,14 @@ class CanvasPainter(
 
         // Read SliderStyle compound tuple for texture-based rendering
         val sliderStyle = resolveStyleToTuple(element.getProperty("SliderStyle"))
-        val sliderBg = sliderStyle?.get("Background") as? PropertyValue.Tuple
+        val sliderBg = resolveStyleToTuple(sliderStyle?.get("Background"))
         val sliderHandlePath = (sliderStyle?.get("Handle") as? PropertyValue.Text)?.value
 
         val value = element.numberProperty("Value", 0.5f)
         val minValue = element.numberPropertyOrAlias("MinValue", "Min", 0f)
         val maxValue = element.numberPropertyOrAlias("MaxValue", "Max", 1f)
-        val trackColor = element.colorProperty("TrackColor", Color(0xFF2D2D44))
+        val trackColor = sliderStyle?.get("TrackColor")?.let { colorFromValue(it, Color(0xFF2D2D44)) }
+            ?: element.colorProperty("TrackColor", Color(0xFF2D2D44))
         // Fill bar: check top-level FillColor first, then SliderStyle.Fill
         val sliderFill = sliderStyle?.get("Fill")
         val hasFillColor = element.getProperty("FillColor") != null || sliderFill != null
@@ -1934,7 +1988,8 @@ class CanvasPainter(
             sliderFill != null -> colorFromValue(sliderFill, Color(0xFFF7A800.toInt()))
             else -> Color.Transparent
         }
-        val handleColor = element.colorProperty("HandleColor", Color(0xFFF7A800.toInt()))
+        val handleColor = sliderStyle?.get("HandleColor")?.let { colorFromValue(it, Color(0xFFF7A800.toInt())) }
+            ?: element.colorProperty("HandleColor", Color(0xFFF7A800.toInt()))
         val handleW = (sliderStyle?.get("HandleWidth") as? PropertyValue.Number)?.value?.toFloat()
             ?: element.numberProperty("HandleSize", 10f)
         val handleH = (sliderStyle?.get("HandleHeight") as? PropertyValue.Number)?.value?.toFloat()
@@ -2136,16 +2191,16 @@ class CanvasPainter(
         val checkColor = element.colorProperty("CheckColor", Color(0xFFF7A800.toInt()))
         val borderColor = element.colorProperty("BorderColor", Color(0xFF8A8A9A.toInt()))
         val boxSize = element.numberProperty("BoxSize", 14f) * zoom
-        val fontSize = element.numberProperty("FontSize", 12f)
-        val textColor = element.colorProperty("Color", DEFAULT_TEXT)
+        val fontSize = element.styledNumberProperty("FontSize", 12f)
+        val textColor = element.styledColorProperty("Color", DEFAULT_TEXT)
         val spacing = element.numberProperty("Spacing", 6f) * zoom
 
         // Read CheckBoxStyle compound tuple: (Checked: (DefaultBackground: ...), Unchecked: (DefaultBackground: ...))
         val checkBoxStyle = resolveStyleToTuple(element.getProperty("Style"))
-        val checkedState = checkBoxStyle?.get("Checked") as? PropertyValue.Tuple
-        val uncheckedState = checkBoxStyle?.get("Unchecked") as? PropertyValue.Tuple
+        val checkedState = resolveStyleToTuple(checkBoxStyle?.get("Checked"))
+        val uncheckedState = resolveStyleToTuple(checkBoxStyle?.get("Unchecked"))
         val activeState = if (checked) checkedState else uncheckedState
-        val stateBackground = activeState?.get("DefaultBackground") as? PropertyValue.Tuple
+        val stateBackground = resolveStyleToTuple(activeState?.get("DefaultBackground"))
         val stateBgTexture = (stateBackground?.get("TexturePath") as? PropertyValue.Text)?.value
         val stateBgColor = stateBackground?.get("Color")?.let { colorFromValue(it, Color.Transparent) }
 
@@ -2246,10 +2301,10 @@ class CanvasPainter(
         val value = element.numberProperty("Value", 0.65f)
         val minValue = element.numberPropertyOrAlias("MinValue", "Min", 0f)
         val maxValue = element.numberPropertyOrAlias("MaxValue", "Max", 1f)
-        val fillColor = element.colorProperty("FillColor", Color(0xFF60A5FA.toInt()))
-        val bgColor = element.colorProperty("Background", Color(0xFF2D2D44))
-        val borderColor = element.colorProperty("BorderColor", Color.Transparent)
-        val cornerRadius = element.numberProperty("CornerRadius", 0f) * zoom
+        val fillColor = element.styledColorProperty("FillColor", Color(0xFF60A5FA.toInt()))
+        val bgColor = element.styledColorProperty("Background", Color(0xFF2D2D44))
+        val borderColor = element.styledColorProperty("BorderColor", Color.Transparent)
+        val cornerRadius = element.styledNumberProperty("CornerRadius", 0f) * zoom
         // FillDirection is the explicit property; Direction + Alignment are vanilla shorthands
         val explicitFillDir = element.textProperty("FillDirection", "")
         val direction = element.textProperty("Direction", "")
@@ -2257,7 +2312,7 @@ class CanvasPainter(
             element.textProperty("HorizontalAlignment", "")
         }
         val fillDirection = resolveProgressBarFillDirection(explicitFillDir, direction, alignment)
-        val showPercentage = element.booleanProperty("ShowPercentage", false)
+        val showPercentage = element.styledBooleanProperty("ShowPercentage", false)
 
         val ratio = if (maxValue <= minValue) 0f
         else ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
@@ -2368,8 +2423,8 @@ class CanvasPainter(
         if (width <= 0f || height <= 0f) return
         val zoom = state.zoom.value
 
-        val bgColor = element.colorProperty("Background", Color.Transparent)
-        val borderColor = element.colorProperty("BorderColor", Color(0xFF5D5D5D))
+        val bgColor = element.styledColorProperty("Background", Color.Transparent)
+        val borderColor = element.styledColorProperty("BorderColor", Color(0xFF5D5D5D))
         val scrollDirection = element.textProperty("ScrollDirection", "Vertical")
         val showScrollbars = element.booleanProperty("ShowScrollbars", true)
                              || element.booleanProperty("ShowScrollbar", true)
@@ -2457,14 +2512,11 @@ class CanvasPainter(
             ?: element.numberProperty("FontSize", 12f)
         val renderBold = (dropdownLabelStyle?.get("RenderBold") as? PropertyValue.Boolean)?.value ?: false
         val renderUppercase = (dropdownLabelStyle?.get("RenderUppercase") as? PropertyValue.Boolean)?.value ?: false
-        val enabled = element.booleanProperty("Enabled", true)
-
-        val alpha = if (enabled) 1f else 0.5f
         val cr = CornerRadius(cornerRadius)
 
         // Background: try nine-patch from Style.DefaultBackground first, then flat color
         var backgroundDrawn = false
-        val defaultBg = dropdownStyle?.get("DefaultBackground") as? PropertyValue.Tuple
+        val defaultBg = resolveStyleToTuple(dropdownStyle?.get("DefaultBackground"))
         if (defaultBg != null) {
             val texPath = (defaultBg.get("TexturePath") as? PropertyValue.Text)?.value
                 ?: (defaultBg.get("TexturePath") as? PropertyValue.ImagePath)?.path
@@ -2496,7 +2548,7 @@ class CanvasPainter(
 
         if (!backgroundDrawn) {
             drawRoundRect(
-                color = bgColor.copy(alpha = bgColor.alpha * alpha),
+                color = bgColor,
                 topLeft = position,
                 size = Size(width, height),
                 cornerRadius = cr
@@ -2504,7 +2556,7 @@ class CanvasPainter(
 
             // Border (only when using flat color background)
             drawRoundRect(
-                color = borderColor.copy(alpha = borderColor.alpha * alpha),
+                color = borderColor,
                 topLeft = position,
                 size = Size(width, height),
                 cornerRadius = cr,
@@ -2512,18 +2564,19 @@ class CanvasPainter(
             )
         }
 
-        // Overlay texture from Style
-        val overlayTuple = dropdownStyle?.get("Overlay") as? PropertyValue.Tuple
-        val overlayPath = (overlayTuple?.get("Default") as? PropertyValue.Text)?.value
-            ?: (dropdownStyle?.get("Overlay") as? PropertyValue.Text)?.value
+        // Overlay texture from Style — handles both direct text paths and tuples:
+        // Overlay: "path.png" or Overlay: (Default: "path.png") or Overlay: (Default: (TexturePath: "path.png"))
+        val overlayRaw = dropdownStyle?.get("Overlay")
+        val overlayTuple = overlayRaw as? PropertyValue.Tuple
+        val overlayPath = extractTexturePath(overlayTuple?.get("Default"))
+            ?: extractTexturePath(overlayRaw)
         if (overlayPath != null) {
             val overlayTex = getOrLoadTexture(overlayPath)
             if (overlayTex != null) {
                 drawImage(
                     image = overlayTex,
                     dstOffset = IntOffset(position.x.toInt(), position.y.toInt()),
-                    dstSize = IntSize(width.toInt(), height.toInt()),
-                    alpha = alpha
+                    dstSize = IntSize(width.toInt(), height.toInt())
                 )
             }
         }
@@ -2544,13 +2597,12 @@ class CanvasPainter(
             drawImage(
                 image = arrowTexture,
                 dstOffset = IntOffset(ax.toInt(), ay.toInt()),
-                dstSize = IntSize(aw.toInt(), ah.toInt()),
-                alpha = alpha
+                dstSize = IntSize(aw.toInt(), ah.toInt())
             )
         } else {
             val arrowX = position.x + width - arrowSize - 8f * zoom
             val arrowY = position.y + (height - arrowSize * 0.6f) / 2
-            val arrowColor = textColor.copy(alpha = textColor.alpha * alpha * 0.6f)
+            val arrowColor = textColor.copy(alpha = textColor.alpha * 0.6f)
 
             drawLine(
                 color = arrowColor,
@@ -2572,7 +2624,7 @@ class CanvasPainter(
             if (renderUppercase) displayText = displayText.uppercase()
             val maxTextWidth = (width - arrowSize - 20f * zoom).coerceAtLeast(0f)
             val textStyle = TextStyle(
-                color = textColor.copy(alpha = textColor.alpha * alpha),
+                color = textColor,
                 fontSize = (fontSize * zoom).sp,
                 fontWeight = if (renderBold) FontWeight.Bold else FontWeight.Normal
             )
@@ -2613,8 +2665,8 @@ class CanvasPainter(
         // Read TabStyle/SelectedTabStyle compound tuples
         val tabStyleTuple = resolveStyleToTuple(element.getProperty("TabStyle"))
         val selectedTabStyleTuple = resolveStyleToTuple(element.getProperty("SelectedTabStyle"))
-        val tabDefault = tabStyleTuple?.get("Default") as? PropertyValue.Tuple
-        val selectedTabDefault = selectedTabStyleTuple?.get("Default") as? PropertyValue.Tuple
+        val tabDefault = resolveStyleToTuple(tabStyleTuple?.get("Default"))
+        val selectedTabDefault = resolveStyleToTuple(selectedTabStyleTuple?.get("Default"))
 
         // Extract label styles from tab style tuples
         val tabLabelStyle = resolveStyleToTuple(tabDefault?.get("LabelStyle"))
@@ -2634,8 +2686,8 @@ class CanvasPainter(
             ?: element.numberProperty("TabFontSize", 11f)
         val tabBold = (tabLabelStyle?.get("RenderBold") as? PropertyValue.Boolean)?.value ?: false
         val tabUppercase = (tabLabelStyle?.get("RenderUppercase") as? PropertyValue.Boolean)?.value ?: false
-        val tabOverlayPath = (tabDefault?.get("Overlay") as? PropertyValue.Text)?.value
-        val selectedTabOverlayPath = (selectedTabDefault?.get("Overlay") as? PropertyValue.Text)?.value
+        val tabOverlayPath = extractTexturePath(tabDefault?.get("Overlay"))
+        val selectedTabOverlayPath = extractTexturePath(selectedTabDefault?.get("Overlay"))
         val selectedTab = element.numberProperty("SelectedTab", 0f).toInt()
         val panelBg = element.colorProperty("PanelBackground", Color.Transparent)
         val borderColor = element.colorProperty("BorderColor", Color(0xFF5D5D5D))
@@ -2774,11 +2826,11 @@ class CanvasPainter(
 
         val text = element.textProperty("Text", "Tooltip")
         val title = element.textProperty("Title", "")
-        val bgColor = element.colorProperty("Background", Color(0xFF2D2D2D))
-        val borderColor = element.colorProperty("BorderColor", Color(0xFF5D5D5D))
-        val cornerRadius = element.numberProperty("CornerRadius", 4f) * zoom
-        val textColor = element.colorProperty("Color", Color(0xFFEAEAEA.toInt()))
-        val fontSize = element.numberProperty("FontSize", 11f)
+        val bgColor = element.styledColorProperty("Background", Color(0xFF2D2D2D))
+        val borderColor = element.styledColorProperty("BorderColor", Color(0xFF5D5D5D))
+        val cornerRadius = element.styledNumberProperty("CornerRadius", 4f) * zoom
+        val textColor = element.styledColorProperty("Color", Color(0xFFEAEAEA.toInt()))
+        val fontSize = element.styledNumberProperty("FontSize", 11f)
         val showArrow = element.booleanProperty("ShowArrow", false)
 
         val cr = CornerRadius(cornerRadius)

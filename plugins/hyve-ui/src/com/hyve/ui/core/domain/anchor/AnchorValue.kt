@@ -108,6 +108,8 @@ sealed class AnchorDimension {
         }
 
         override fun toString(): String {
+            // 0% and 0 are semantically identical; Hytale rejects "0%" so emit "0"
+            if (ratio == 0.0f) return "0"
             // Round to 2 decimal places to avoid floating point precision issues
             // e.g., 0.3 * 100 = 30.000002 -> rounds to 30.00
             val pct = kotlin.math.round(ratio * 10000.0f) / 100.0f

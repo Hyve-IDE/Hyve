@@ -475,6 +475,78 @@ class VariableAwareParserTest {
     }
 
     @Test
+    fun `element-scoped styles are resolved when referenced in other properties`() {
+        val source = """
+            @LabelStyle = (FontSize: 15, TextColor: #94979d);
+
+            TextButton #Button {
+                @Default = (LabelStyle: @LabelStyle, Background: #ffffff);
+                @Hovered = (...@LabelStyle, TextColor: #babec6);
+                Style: (Default: @Default, Hovered: (LabelStyle: @Hovered));
+            }
+        """.trimIndent()
+
+        val filePath = Path("test.ui")
+        val result = VariableAwareParser.forSourceWithPath(source, filePath).parse()
+
+        assertThat(result.isSuccess()).isTrue()
+        val parsed = (result as Result.Success).value
+
+        val styleProp = parsed.document.root.properties[com.hyve.ui.core.id.PropertyName("Style")]
+        assertThat(styleProp).isInstanceOf(PropertyValue.Tuple::class.java)
+        val styleTuple = styleProp as PropertyValue.Tuple
+
+        // Default should be resolved to a Tuple (not remain as Style(Local("Default")))
+        val defaultVal = styleTuple.values["Default"]
+        assertThat(defaultVal).isInstanceOf(PropertyValue.Tuple::class.java)
+        val defaultTuple = defaultVal as PropertyValue.Tuple
+
+        // LabelStyle inside Default should be resolved to a Tuple with FontSize
+        val labelStyleVal = defaultTuple.values["LabelStyle"]
+        assertThat(labelStyleVal).isInstanceOf(PropertyValue.Tuple::class.java)
+        val labelTuple = labelStyleVal as PropertyValue.Tuple
+        assertThat(labelTuple.values["FontSize"]).isEqualTo(PropertyValue.Number(15.0))
+
+        // Background in Default should be a Color
+        val bgVal = defaultTuple.values["Background"]
+        assertThat(bgVal).isInstanceOf(PropertyValue.Color::class.java)
+    }
+
+    @Test
+    fun `element-scoped styles with spread resolve correctly`() {
+        val source = """
+            @BaseBg = (TexturePath: "bg.png", Border: 8);
+
+            TextField {
+                @DecorationBg = (...@BaseBg, Border: 4);
+                Decoration: (Default: (Background: @DecorationBg));
+            }
+        """.trimIndent()
+
+        val filePath = Path("test.ui")
+        val result = VariableAwareParser.forSourceWithPath(source, filePath).parse()
+
+        assertThat(result.isSuccess()).isTrue()
+        val parsed = (result as Result.Success).value
+
+        val decorProp = parsed.document.root.properties[com.hyve.ui.core.id.PropertyName("Decoration")]
+        assertThat(decorProp).isInstanceOf(PropertyValue.Tuple::class.java)
+        val decorTuple = decorProp as PropertyValue.Tuple
+
+        val defaultVal = decorTuple.values["Default"]
+        assertThat(defaultVal).isInstanceOf(PropertyValue.Tuple::class.java)
+        val defaultTuple = defaultVal as PropertyValue.Tuple
+
+        // Background should be resolved to a Tuple with TexturePath and Border
+        val bgVal = defaultTuple.values["Background"]
+        assertThat(bgVal).isInstanceOf(PropertyValue.Tuple::class.java)
+        val bgTuple = bgVal as PropertyValue.Tuple
+        assertThat(bgTuple.values["TexturePath"]).isEqualTo(PropertyValue.Text("bg.png"))
+        // Border should be overridden to 4 from the spread
+        assertThat(bgTuple.values["Border"]).isEqualTo(PropertyValue.Number(4.0))
+    }
+
+    @Test
     fun `forSourceWithPath converts resolved anchor tuples to AnchorValue`() {
         val source = """
             @Left = 10;

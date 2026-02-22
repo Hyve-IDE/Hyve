@@ -10,6 +10,7 @@ class IndexDocsAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        if (!MemoryCheckUtil.checkHeapAndWarn(project)) return
         ProgressManager.getInstance().run(DocsIndexerTask(project))
     }
 

@@ -119,6 +119,12 @@ class UIExporter(
                 formatter.appendLine("$styleName = ${style.elementType} {")
                 formatter.indented {
                     exportProperties(PropertyMap(style.properties), formatter)
+                    if (style.children.isNotEmpty()) {
+                        if (config.addBlankLineBetweenElements && style.properties.isNotEmpty()) {
+                            formatter.appendBlankLine()
+                        }
+                        exportChildren(style.children, formatter)
+                    }
                 }
                 formatter.appendLine("};")
             }

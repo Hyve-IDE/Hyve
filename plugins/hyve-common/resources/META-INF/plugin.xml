@@ -36,6 +36,9 @@
                        displayType="BALLOON"
                        isLogByDefault="true"/>
 
+    <!-- Prompt users to try Hyve Dark theme on first project open -->
+    <postStartupActivity implementation="com.hyve.common.startup.HyveThemeRecommendationActivity"/>
+
     <!-- Hyve parent settings configurable under Tools -->
     <applicationConfigurable
         id="hyve.settings"

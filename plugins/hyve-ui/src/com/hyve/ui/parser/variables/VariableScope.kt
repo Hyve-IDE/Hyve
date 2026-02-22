@@ -1,6 +1,7 @@
 package com.hyve.ui.parser.variables
 
 import com.hyve.ui.core.domain.properties.PropertyValue
+import com.hyve.ui.core.domain.styles.StyleDefinition
 import com.hyve.ui.core.id.ImportAlias
 
 /**
@@ -16,6 +17,9 @@ class VariableScope(
 ) {
     // Local variables defined in this scope (without @ prefix in key)
     private val variables = mutableMapOf<String, PropertyValue>()
+
+    // Template definitions (element-based styles like @Container = Group { ... })
+    private val templateDefinitions = mutableMapOf<String, StyleDefinition>()
 
     // File imports defined in this scope (without $ prefix in key)
     private val imports = mutableMapOf<String, String>()
@@ -49,6 +53,27 @@ class VariableScope(
      */
     fun getResolvedImport(alias: String): VariableScope? {
         return resolvedImports[alias] ?: parent?.getResolvedImport(alias)
+    }
+
+    /**
+     * Define an element-based template: @Container = Group { ... }
+     */
+    fun defineTemplate(name: String, definition: StyleDefinition) {
+        templateDefinitions[name] = definition
+    }
+
+    /**
+     * Look up a template by name (searches parent scopes)
+     */
+    fun getTemplate(name: String): StyleDefinition? {
+        return templateDefinitions[name] ?: parent?.getTemplate(name)
+    }
+
+    /**
+     * Resolve a template from an imported file: $Alias.@TemplateName
+     */
+    fun resolveImportedTemplate(alias: String, templateName: String): StyleDefinition? {
+        return getResolvedImport(alias)?.getTemplate(templateName)
     }
 
     /**

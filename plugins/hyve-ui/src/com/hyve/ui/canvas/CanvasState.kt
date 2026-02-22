@@ -16,6 +16,8 @@ import com.hyve.ui.registry.ElementTypeRegistry
 import com.hyve.ui.rendering.layout.LayoutEngine
 import com.hyve.ui.rendering.layout.Rect
 import com.hyve.ui.rendering.layout.ElementBounds
+import com.hyve.ui.rendering.painter.resolveStyleToTuple
+import com.hyve.ui.rendering.painter.get
 import com.hyve.common.undo.UndoManager
 import com.hyve.ui.state.command.*
 import com.hyve.ui.schema.SchemaRegistry
@@ -1588,7 +1590,9 @@ class CanvasState(
      */
     fun isLayoutManaged(element: UIElement): Boolean {
         val parent = findParent(element) ?: return false
-        val layoutMode = (parent.getProperty("LayoutMode") as? PropertyValue.Text)?.value
+        val layoutMode = ((parent.getProperty("LayoutMode")
+            ?: resolveStyleToTuple(parent.getProperty("Style"))?.get("LayoutMode"))
+            as? PropertyValue.Text)?.value
         return layoutMode in LayoutEngine.STACK_MODES
     }
 
@@ -1598,7 +1602,9 @@ class CanvasState(
      */
     fun getParentLayoutMode(element: UIElement): String? {
         val parent = findParent(element) ?: return null
-        val layoutMode = (parent.getProperty("LayoutMode") as? PropertyValue.Text)?.value
+        val layoutMode = ((parent.getProperty("LayoutMode")
+            ?: resolveStyleToTuple(parent.getProperty("Style"))?.get("LayoutMode"))
+            as? PropertyValue.Text)?.value
         return if (layoutMode in LayoutEngine.STACK_MODES) layoutMode else null
     }
 

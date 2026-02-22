@@ -154,9 +154,15 @@ class ImportResolver(
     /**
      * Extract variable definitions from a document into a scope.
      * Variables come from style definitions that are simple values.
+     * Element-based styles are also registered as templates for expansion.
      */
     private fun extractVariables(document: UIDocument, scope: VariableScope) {
         for ((styleName, styleDef) in document.styles) {
+            // Register element-based styles as templates (e.g., @Container = Group { ... })
+            if (styleDef.elementType != null) {
+                scope.defineTemplate(styleName.value, styleDef)
+            }
+
             // Check if the style is a simple value or an alias
             val value = styleDef.properties[com.hyve.ui.core.id.PropertyName("_value")]
                 ?: styleDef.properties[com.hyve.ui.core.id.PropertyName("_styleAlias")]

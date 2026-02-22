@@ -286,6 +286,19 @@ class ExpressionEvaluator(
         return PropertyValue.Spread(inner)
     }
 
+    /**
+     * Create a child evaluator with additional variables in a nested scope.
+     * Used by VariableAwareParser to make element-scoped @styles available
+     * when evaluating properties that reference them (e.g. Style: (Default: @Default)).
+     */
+    fun withChildScope(name: String, additionalVars: Map<String, PropertyValue>): ExpressionEvaluator {
+        val child = scope.createChildScope(name)
+        for ((varName, value) in additionalVars) {
+            child.defineVariable(varName, value)
+        }
+        return ExpressionEvaluator(child, warningHandler)
+    }
+
     private fun warn(message: String) {
         warningHandler?.invoke(message)
     }
