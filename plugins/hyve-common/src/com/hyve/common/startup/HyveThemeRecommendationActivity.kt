@@ -9,37 +9,55 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private const val HYVE_THEME_ID = "Hyve Dark"
-private const val PROMPTED_KEY = "hyve.theme.prompted"
+private const val CHOSEN_KEY = "hyve.theme.chosen"
+private const val DECLINED_KEY = "hyve.theme.declined"
 
 /**
- * On first project open, shows a balloon asking whether the user wants to
- * switch to the Hyve Dark theme.  If they click "Yes", the theme is applied
- * immediately.  "Not now" dismisses the balloon for this session.  "Don't
- * ask again" persists the choice so the prompt never reappears.
+ * Counteracts IntelliJ's built-in auto-apply behavior for [themeProvider] extensions.
  *
- * The prompt is skipped when:
- *  - The user already has Hyve Dark active.
- *  - The user previously dismissed with "Don't ask again".
+ * When a plugin with `<themeProvider>` is installed, the platform automatically switches
+ * the user's theme (via LafAndEditorColorSchemeDynamicPluginListener). There is no flag
+ * to suppress this. This activity detects the auto-switch and reverts it, then shows a
+ * non-intrusive balloon so the user can opt in.
+ *
+ * State keys (persisted in ide-general.xml, survive plugin uninstall/reinstall):
+ *  - [CHOSEN_KEY]: user explicitly applied Hyve Dark via the balloon → keep it.
+ *  - [DECLINED_KEY]: user dismissed the prompt → revert silently, don't prompt again.
  */
 class HyveThemeRecommendationActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
-        val properties = PropertiesComponent.getInstance()
+        val props = PropertiesComponent.getInstance()
+        val laf = LafManager.getInstance()
 
-        if (properties.getBoolean(PROMPTED_KEY, false)) return
+        // User previously clicked "Yes, apply it" → respect their choice
+        if (props.getBoolean(CHOSEN_KEY, false)) return
 
-        val lafManager = LafManager.getInstance()
-        if (lafManager.currentUIThemeLookAndFeel?.id == HYVE_THEME_ID) {
-            properties.setValue(PROMPTED_KEY, true)
-            return
+        // If Hyve Dark is active but the user never chose it, the platform auto-applied it.
+        // Revert to Darcula (our parentTheme).
+        if (laf.currentUIThemeLookAndFeel?.id == HYVE_THEME_ID) {
+            val darcula = UiThemeProviderListManager.getInstance().findThemeById("Darcula")
+            if (darcula != null) {
+                withContext(Dispatchers.EDT) {
+                    laf.setCurrentLookAndFeel(darcula, true)
+                    laf.updateUI()
+                }
+            }
         }
 
-        val themeManager = UiThemeProviderListManager.getInstance()
-        val hyveTheme = themeManager.findThemeById(HYVE_THEME_ID) ?: return
+        // User previously clicked "Don't ask again" → done
+        if (props.getBoolean(DECLINED_KEY, false)) return
+
+        // Show a one-time recommendation balloon
+        val hyveTheme = UiThemeProviderListManager.getInstance().findThemeById(HYVE_THEME_ID)
+            ?: return
 
         val notification = NotificationGroupManager.getInstance()
             .getNotificationGroup("Hyve Notifications")
@@ -51,9 +69,9 @@ class HyveThemeRecommendationActivity : ProjectActivity {
 
         notification.addAction(object : NotificationAction("Yes, apply it") {
             override fun actionPerformed(e: AnActionEvent, n: Notification) {
-                lafManager.setCurrentLookAndFeel(hyveTheme, true)
-                lafManager.updateUI()
-                properties.setValue(PROMPTED_KEY, true)
+                laf.setCurrentLookAndFeel(hyveTheme, true)
+                laf.updateUI()
+                props.setValue(CHOSEN_KEY, true)
                 n.expire()
             }
         })
@@ -66,7 +84,7 @@ class HyveThemeRecommendationActivity : ProjectActivity {
 
         notification.addAction(object : NotificationAction("Don't ask again") {
             override fun actionPerformed(e: AnActionEvent, n: Notification) {
-                properties.setValue(PROMPTED_KEY, true)
+                props.setValue(DECLINED_KEY, true)
                 n.expire()
             }
         })

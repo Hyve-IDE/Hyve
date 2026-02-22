@@ -49,6 +49,10 @@
     <notificationGroup id="Hyve Notifications"
                        displayType="BALLOON"
                        isLogByDefault="true"/>
+
+    <!-- Prompt users to try Hyve Dark theme on first project open -->
+    <postStartupActivity implementation="com.hyve.common.startup.HyveThemeRecommendationActivity"/>
+
     <applicationConfigurable
         id="hyve.settings"
         parentId="tools"
