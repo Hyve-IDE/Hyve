@@ -8,7 +8,7 @@ data class FormatterConfig(
     val useSpaces: Boolean = true,
     val addTrailingSemicolons: Boolean = true,
     val maxLineLength: Int = 120,
-    val addBlankLineBetweenElements: Boolean = false,
+    val addBlankLineBetweenElements: Boolean = true,
     val addBlankLineAfterImports: Boolean = true,
     val addBlankLineAfterStyles: Boolean = true
 ) {

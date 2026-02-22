@@ -384,14 +384,27 @@ class UIExporter(
     }
 
     /**
-     * Export child elements
+     * Export child elements.
+     * Handles synthetic _Comment children (preserving comment position relative to siblings).
      */
     private fun exportChildren(children: List<UIElement>, formatter: Formatter) {
         children.forEachIndexed { index, child ->
-            if (index > 0 && config.addBlankLineBetweenElements) {
-                formatter.appendBlankLine()
+            if (child.type.value == "_Comment") {
+                // Synthetic comment child — emit raw comment text without blank-line padding
+                val text = (child.properties[PropertyName("text")] as? PropertyValue.Text)?.value
+                if (text != null) {
+                    formatter.appendLine(text)
+                }
+            } else {
+                if (index > 0 && config.addBlankLineBetweenElements) {
+                    // Don't insert blank line if the previous sibling was a comment
+                    val prev = children[index - 1]
+                    if (prev.type.value != "_Comment") {
+                        formatter.appendBlankLine()
+                    }
+                }
+                exportElement(child, formatter)
             }
-            exportElement(child, formatter)
         }
     }
 
@@ -541,20 +554,28 @@ class UIExporter(
     }
 
     /**
-     * Format anchor value
+     * Format anchor value, preserving original field order for round-trip fidelity.
      * Example: (Left: 10, Top: 5, Width: 100%, Height: 50%)
      */
     private fun formatAnchor(anchor: PropertyValue.Anchor): String {
         val anchorValue = anchor.anchor
-        val entries = mutableListOf<String>()
 
-        // Use toString() which properly formats both Absolute (pixels) and Relative (percentages)
-        anchorValue.left?.let { entries.add("Left: $it") }
-        anchorValue.top?.let { entries.add("Top: $it") }
-        anchorValue.right?.let { entries.add("Right: $it") }
-        anchorValue.bottom?.let { entries.add("Bottom: $it") }
-        anchorValue.width?.let { entries.add("Width: $it") }
-        anchorValue.height?.let { entries.add("Height: $it") }
+        // Use original field order when available, otherwise default order
+        val order = if (anchorValue.fieldOrder.isNotEmpty()) anchorValue.fieldOrder
+                    else listOf("Left", "Top", "Right", "Bottom", "Width", "Height")
+
+        val entries = order.mapNotNull { field ->
+            val dim = when (field) {
+                "Left" -> anchorValue.left
+                "Top" -> anchorValue.top
+                "Right" -> anchorValue.right
+                "Bottom" -> anchorValue.bottom
+                "Width" -> anchorValue.width
+                "Height" -> anchorValue.height
+                else -> null
+            }
+            dim?.let { "$field: $it" }
+        }
 
         return "(${entries.joinToString(", ")})"
     }

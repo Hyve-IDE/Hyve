@@ -385,12 +385,30 @@ class UIParser(
         // Counter for synthetic comment property keys
         var commentIndex = 0
 
+        // Track whether we've seen a child element.
+        // Comments before the first child are stored as properties (exported with properties).
+        // Comments after the first child are stored as synthetic _Comment child elements
+        // to preserve their position relative to siblings.
+        var seenChild = false
+
         while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
             when {
-                // Preserve comments inside elements as inline synthetic properties
+                // Preserve comments inside elements
                 check(TokenType.COMMENT) -> {
                     val commentToken = advance()
-                    properties[PropertyName("_comment_${commentIndex++}")] = PropertyValue.Text(commentToken.lexeme)
+                    if (seenChild) {
+                        // Comment between children → synthetic child element
+                        children.add(UIElement(
+                            type = ElementType("_Comment"),
+                            id = null,
+                            properties = PropertyMap.of(
+                                PropertyName("text") to PropertyValue.Text(commentToken.lexeme)
+                            )
+                        ))
+                    } else {
+                        // Comment before first child → property (exported with properties)
+                        properties[PropertyName("_comment_${commentIndex++}")] = PropertyValue.Text(commentToken.lexeme)
+                    }
                 }
 
                 // Element-scoped style definition: @StyleState = (...);
@@ -405,21 +423,25 @@ class UIParser(
                 // Style-prefixed child element: @FooterButton #Id { ... }
                 check(TokenType.AT) && peekIsStylePrefixedElement() -> {
                     parseStylePrefixedElement()?.let { children.add(it) }
+                    seenChild = true
                 }
 
                 // Variable reference element: $AssetEditor.@Spinner { ... }
                 check(TokenType.DOLLAR) && peekIsVariableReferenceElement() -> {
                     parseVariableReferenceElement()?.let { children.add(it) }
+                    seenChild = true
                 }
 
                 // Child element: ChildType #Id { ... } or ChildType { ... }
                 check(TokenType.IDENTIFIER) && peekNext()?.type in listOf(TokenType.HASH, TokenType.LEFT_BRACE) -> {
                     parseElement()?.let { children.add(it) }
+                    seenChild = true
                 }
 
                 // ID-only block: #Buttons { ... } - implicit container with just ID
                 check(TokenType.HASH) && peekIsIdOnlyBlock() -> {
                     parseIdOnlyBlock()?.let { children.add(it) }
+                    seenChild = true
                 }
 
                 // Property: Name: value;
@@ -1192,13 +1214,17 @@ class UIParser(
             }
         }
 
+        // entries is a LinkedHashMap — keys().toList() preserves original parse order
+        val fieldOrder = entries.keys.toList()
+
         return AnchorValue(
             left = getDimension("Left"),
             top = getDimension("Top"),
             right = getDimension("Right"),
             bottom = getDimension("Bottom"),
             width = getDimension("Width"),
-            height = getDimension("Height")
+            height = getDimension("Height"),
+            fieldOrder = fieldOrder
         )
     }
 

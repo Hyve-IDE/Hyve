@@ -404,7 +404,7 @@ private fun EditorMainContent(
     LaunchedEffect(Unit) {
         snapshotFlow { canvasState.treeVersion.value }
             .collect { version ->
-                if (version > 0L) {
+                if (version > 0L && editDeltaTracker.hasChanges()) {
                     val raw = rawDocument
                     if (raw != null) {
                         try {

@@ -279,7 +279,8 @@ class VariableAwareParser private constructor(
             right = getDimension("Right"),
             bottom = getDimension("Bottom"),
             width = getDimension("Width"),
-            height = getDimension("Height")
+            height = getDimension("Height"),
+            fieldOrder = tuple.values.keys.toList()
         )
     }
 

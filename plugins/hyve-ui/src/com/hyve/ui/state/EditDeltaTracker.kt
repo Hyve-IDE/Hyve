@@ -98,6 +98,12 @@ class EditDeltaTracker {
     }
 
     /**
+     * Check if any deltas have been recorded since the last clear().
+     * Used to guard the export pipeline from firing on initial parse.
+     */
+    fun hasChanges(): Boolean = deltas.isNotEmpty()
+
+    /**
      * Apply all recorded deltas to the raw document.
      *
      * Structural deltas (AddElement/DeleteElement) are applied first,

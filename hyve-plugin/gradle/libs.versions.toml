@@ -8,6 +8,8 @@ agrona = "1.20.0"
 commons-math3 = "3.6.1"
 slf4j = "2.0.16"
 snakeyaml = "2.4"
+assertj = "3.27.3"
+junit4 = "4.13.2"
 junit-jupiter = "5.14.0"
 mcp-sdk = "0.8.1"
 kotlin-logging = "7.0.3"
@@ -28,6 +30,8 @@ agrona = { module = "org.agrona:agrona", version.ref = "agrona" }
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 mcp-sdk = { module = "io.modelcontextprotocol:kotlin-sdk-jvm", version.ref = "mcp-sdk" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }

@@ -49,6 +49,7 @@ dependencies {
 
     // Test
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 // ── Kotlin compiler ──────────────────────────────────────────────────────

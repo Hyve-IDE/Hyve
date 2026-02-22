@@ -94,7 +94,9 @@ dependencies {
     implementation(libs.snakeyaml)
 
     // Test
+    testImplementation(libs.junit4)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj)
 }
 
 // Kotlin stdlib and coroutines are provided by the IntelliJ platform — do not bundle them

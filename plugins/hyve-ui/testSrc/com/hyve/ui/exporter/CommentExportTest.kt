@@ -80,6 +80,57 @@ class CommentExportTest {
     }
 
     @Test
+    fun `comment between child elements not hoisted to properties`() {
+        val source = """
+            Group {
+                Label #A {
+                    Text: "A";
+                }
+                // Between A and B
+                Label #B {
+                    Text: "B";
+                }
+            }
+        """.trimIndent()
+
+        val (exported, _) = roundTrip(source)
+
+        // Comment must appear BETWEEN the two children, not before them
+        val aClosingIdx = exported.indexOf("}")  // First closing brace (Label #A)
+        val commentIdx = exported.indexOf("// Between A and B")
+        val bIdx = exported.indexOf("Label #B")
+
+        assertThat(commentIdx).isGreaterThan(aClosingIdx)
+        assertThat(bIdx).isGreaterThan(commentIdx)
+    }
+
+    @Test
+    fun `multiple comments between different sibling pairs preserved`() {
+        val source = """
+            Group {
+                Label #A { Text: "A"; }
+                // Comment 1
+                Label #B { Text: "B"; }
+                // Comment 2
+                Label #C { Text: "C"; }
+            }
+        """.trimIndent()
+
+        val (exported, _) = roundTrip(source)
+
+        val aIdx = exported.indexOf("Label #A")
+        val c1Idx = exported.indexOf("// Comment 1")
+        val bIdx = exported.indexOf("Label #B")
+        val c2Idx = exported.indexOf("// Comment 2")
+        val cIdx = exported.indexOf("Label #C")
+
+        assertThat(c1Idx).isGreaterThan(aIdx)
+        assertThat(bIdx).isGreaterThan(c1Idx)
+        assertThat(c2Idx).isGreaterThan(bIdx)
+        assertThat(cIdx).isGreaterThan(c2Idx)
+    }
+
+    @Test
     fun `file without comments exports unchanged`() {
         val source = """
             Group {

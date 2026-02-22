@@ -13,20 +13,30 @@ data class AnchorValue(
     val right: AnchorDimension? = null,
     val bottom: AnchorDimension? = null,
     val width: AnchorDimension? = null,
-    val height: AnchorDimension? = null
+    val height: AnchorDimension? = null,
+    val fieldOrder: List<String> = emptyList()  // original field order from source for round-trip fidelity
 ) {
     // Note: Vanilla Hytale files allow partial anchors like (Left: 0) or (Height: 35)
     // The missing dimensions are inherited from style or calculated from content.
     // We don't validate completeness here to support round-trip parsing.
 
+    /** Resolve a field name to its dimension value. */
+    private fun dimensionFor(field: String): AnchorDimension? = when (field) {
+        "Left" -> left
+        "Top" -> top
+        "Right" -> right
+        "Bottom" -> bottom
+        "Width" -> width
+        "Height" -> height
+        else -> null
+    }
+
     override fun toString(): String {
-        val parts = mutableListOf<String>()
-        left?.let { parts.add("Left: $it") }
-        top?.let { parts.add("Top: $it") }
-        right?.let { parts.add("Right: $it") }
-        bottom?.let { parts.add("Bottom: $it") }
-        width?.let { parts.add("Width: $it") }
-        height?.let { parts.add("Height: $it") }
+        val order = if (fieldOrder.isNotEmpty()) fieldOrder
+                    else listOf("Left", "Top", "Right", "Bottom", "Width", "Height")
+        val parts = order.mapNotNull { field ->
+            dimensionFor(field)?.let { "$field: $it" }
+        }
         return parts.joinToString(", ", prefix = "(", postfix = ")")
     }
 

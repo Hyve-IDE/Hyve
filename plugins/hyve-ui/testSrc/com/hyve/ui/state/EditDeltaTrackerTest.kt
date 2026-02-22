@@ -1191,6 +1191,63 @@ class EditDeltaTrackerTest {
     }
 
     // =====================================================================
+    // Test 16: hasChanges
+    // =====================================================================
+
+    @Test
+    fun `hasChanges should return false on fresh tracker`() {
+        val tracker = EditDeltaTracker()
+        assertThat(tracker.hasChanges()).isFalse()
+    }
+
+    @Test
+    fun `hasChanges should return true after recording a delta`() {
+        val tracker = EditDeltaTracker()
+
+        tracker.record(
+            EditDeltaTracker.EditDelta.SetProperty(
+                elementId = ElementId("btn1"),
+                propertyName = "Text",
+                value = PropertyValue.Text("Updated")
+            )
+        )
+
+        assertThat(tracker.hasChanges()).isTrue()
+    }
+
+    @Test
+    fun `hasChanges should return false after clear`() {
+        val tracker = EditDeltaTracker()
+
+        tracker.record(
+            EditDeltaTracker.EditDelta.SetProperty(
+                elementId = ElementId("btn1"),
+                propertyName = "Text",
+                value = PropertyValue.Text("Updated")
+            )
+        )
+
+        assertThat(tracker.hasChanges()).isTrue()
+        tracker.clear()
+        assertThat(tracker.hasChanges()).isFalse()
+    }
+
+    @Test
+    fun `hasChanges should return true for structural deltas`() {
+        val tracker = EditDeltaTracker()
+
+        tracker.record(
+            EditDeltaTracker.EditDelta.AddElement(
+                parentId = null,
+                index = 0,
+                element = button("btn1")
+            )
+        )
+
+        assertThat(tracker.hasChanges()).isTrue()
+    }
+
+    // =====================================================================
     // Additional edge cases
     // =====================================================================
 
