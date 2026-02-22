@@ -31,6 +31,7 @@ sourceSets {
             root.resolve("plugins/hyve-knowledge/src"),
             root.resolve("plugins/hyve-knowledge/core/src"),
             root.resolve("plugins/hyve-knowledge/mcp-server/src"),
+            root.resolve("plugins/hyve-blockbench/src"),
         )
         resources.srcDirs(
             // Our merged META-INF lives here
@@ -41,6 +42,7 @@ sourceSets {
             root.resolve("plugins/hyve-prefab/resources"),
             root.resolve("plugins/hyve-mod/resources"),
             root.resolve("plugins/hyve-knowledge/resources"),
+            root.resolve("plugins/hyve-blockbench/resources"),
         )
         // Exclude original per-plugin plugin.xml files — we use our merged one
         resources.filter.exclude("META-INF/plugin.xml")

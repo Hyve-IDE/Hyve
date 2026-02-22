@@ -1,0 +1,18 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType
+        name="Hytale Model"
+        language="JSON"
+        implementationClass="com.hyve.blockbench.BlockbenchFileType"
+        fieldName="INSTANCE"
+        extensions="blockymodel;blockyanim"/>
+
+    <fileEditorProvider
+        implementation="com.hyve.blockbench.editor.BlockbenchTextEditorWithPreviewProvider"/>
+
+    <notificationGroup
+        id="Hyve Blockbench"
+        displayType="BALLOON"
+        isLogByDefault="true"/>
+  </extensions>
+</idea-plugin>

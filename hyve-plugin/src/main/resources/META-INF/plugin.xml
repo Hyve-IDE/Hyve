@@ -69,6 +69,7 @@
   <xi:include href="/META-INF/hyve-prefab.xml"/>
   <xi:include href="/META-INF/hyve-mod.xml"/>
   <xi:include href="/META-INF/hyve-knowledge.xml"/>
+  <xi:include href="/META-INF/hyve-blockbench.xml"/>
 
   <!-- ── Optional MCP dependency ── -->
   <depends optional="true" config-file="knowledge-mcp.xml">com.intellij.mcpServer</depends>
