@@ -238,6 +238,110 @@ class LayoutEngineTest {
         assertThat(layout[c]!!.y).isCloseTo(100f, delta)
     }
 
+    @Test
+    fun `Center layout element with Left anchor respects offset`() {
+        // Simulates an element with LayoutMode: Center and Left offset in a Left-stacking parent.
+        // The Left offset should position the element, not be ignored by centering.
+        val armChild = UIElement(
+            type = ElementType("Group"), id = null,
+            properties = PropertyMap.of(
+                "LayoutMode" to PropertyValue.Text("Center", quoted = false),
+                "Anchor" to PropertyValue.Anchor(AnchorValue(
+                    left = AnchorDimension.Absolute(40f), top = null, right = null, bottom = null,
+                    width = AnchorDimension.Absolute(20f), height = AnchorDimension.Absolute(50f)
+                ))
+            )
+        )
+        val parent = group(layoutMode = "Left", children = listOf(armChild))
+
+        val layout = engine.calculateLayout(parent, parentBounds)
+
+        // Element should be at Left: 40 from its allocated slot, not centered
+        assertThat(layout[armChild]!!.x).isCloseTo(40f, delta)
+        assertThat(layout[armChild]!!.width).isCloseTo(20f, delta)
+    }
+
+    @Test
+    fun `Center layout element with Top anchor in Top stack respects offset`() {
+        // Simulates a row with negative Top offset to overlap with previous elements
+        val row = UIElement(
+            type = ElementType("Group"), id = null,
+            properties = PropertyMap.of(
+                "LayoutMode" to PropertyValue.Text("Center", quoted = false),
+                "Anchor" to PropertyValue.Anchor(AnchorValue(
+                    left = null, top = AnchorDimension.Absolute(-20f), right = null, bottom = null,
+                    width = null, height = AnchorDimension.Absolute(50f)
+                ))
+            )
+        )
+        val spacer = child(height = 100f)
+        val parent = group(layoutMode = "Top", children = listOf(spacer, row))
+
+        val layout = engine.calculateLayout(parent, parentBounds)
+
+        // Row is second child: sequential position y=100, then Top: -20 shifts to y=80
+        assertThat(layout[row]!!.y).isCloseTo(80f, delta)
+        assertThat(layout[row]!!.height).isCloseTo(50f, delta)
+    }
+
+    @Test
+    fun `negative Top offset pulls flow backward for next sibling`() {
+        // Element with negative Top: pulled up, flow tracks visual end
+        val spacer = child(height = 100f)
+        val shifted = UIElement(
+            type = ElementType("Group"), id = null,
+            properties = PropertyMap.of(
+                "Anchor" to PropertyValue.Anchor(AnchorValue(
+                    left = null, top = AnchorDimension.Absolute(-60f), right = null, bottom = null,
+                    width = null, height = AnchorDimension.Absolute(50f)
+                ))
+            )
+        )
+        val after = child(height = 30f)
+        val parent = group(layoutMode = "Top", children = listOf(spacer, shifted, after))
+
+        val layout = engine.calculateLayout(parent, parentBounds)
+
+        // spacer: y=0, h=100 → visual end=100, flow at 100
+        // shifted: starts at y=100, Top: -60 → actual y=40, h=50, visual end=90
+        //          flow advances to 90 (tracks visual end, even backward)
+        // after: starts at y=90
+        assertThat(layout[shifted]!!.y).isCloseTo(40f, delta)
+        assertThat(layout[after]!!.y).isCloseTo(90f, delta)
+    }
+
+    @Test
+    fun `positive offset extends flow to visual end`() {
+        // Element with positive Left offset: next sibling starts after the shifted element
+        val first = UIElement(
+            type = ElementType("Label"), id = null,
+            properties = PropertyMap.of(
+                "Anchor" to PropertyValue.Anchor(AnchorValue(
+                    left = AnchorDimension.Absolute(40f), top = null, right = null, bottom = null,
+                    width = AnchorDimension.Absolute(20f), height = null
+                ))
+            )
+        )
+        val second = UIElement(
+            type = ElementType("Label"), id = null,
+            properties = PropertyMap.of(
+                "Anchor" to PropertyValue.Anchor(AnchorValue(
+                    left = AnchorDimension.Absolute(3f), top = null, right = null, bottom = null,
+                    width = AnchorDimension.Absolute(22f), height = null
+                ))
+            )
+        )
+        val parent = group(layoutMode = "Left", children = listOf(first, second))
+
+        val layout = engine.calculateLayout(parent, parentBounds)
+
+        // first: sequential x=0, Left: 40 → actual x=40, width=20, visual end=60
+        //        flow advances to max(0, 60) = 60
+        // second: sequential x=60, Left: 3 → actual x=63, width=22
+        assertThat(layout[first]!!.x).isCloseTo(40f, delta)
+        assertThat(layout[second]!!.x).isCloseTo(63f, delta)
+    }
+
     // --- Combined: Padding + FlexWeight ---
 
     @Test

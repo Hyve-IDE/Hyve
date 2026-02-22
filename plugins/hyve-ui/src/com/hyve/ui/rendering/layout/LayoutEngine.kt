@@ -142,7 +142,15 @@ class LayoutEngine(private val schema: SchemaRegistry) {
             "Top", "Left", "Right", "Bottom",
             "TopScrolling", "BottomScrolling", "LeftScrolling" ->
                 calculateStackLayout(element, parentBounds, Direction.VERTICAL, siblings)
-            "Middle", "Center", "CenterMiddle" -> calculateCenterLayout(element, parentBounds)
+            "Middle", "Center", "CenterMiddle" -> {
+                // LayoutMode affects how CHILDREN are positioned, not the element itself.
+                // The element's own position always comes from its anchor.
+                // AnchorCalculator Case 4 (Width/Height only) centers automatically,
+                // while also respecting Left/Top/Right/Bottom when present.
+                val anchor = element.getProperty("Anchor") as? PropertyValue.Anchor
+                if (anchor != null) AnchorCalculator.calculateBounds(anchor.anchor, parentBounds)
+                else parentBounds
+            }
             "Full", "LeftCenterWrap" -> {
                 // These modes position children but element itself uses anchor
                 val anchor = element.getProperty("Anchor") as? PropertyValue.Anchor
@@ -299,9 +307,7 @@ class LayoutEngine(private val schema: SchemaRegistry) {
                     currentOffset -= childSize
                     contentArea.y + currentOffset
                 } else {
-                    val pos = contentArea.y + currentOffset
-                    currentOffset += childSize
-                    pos
+                    contentArea.y + currentOffset
                 }
                 Rect(contentArea.x, y, contentArea.width, childSize)
             } else {
@@ -309,19 +315,33 @@ class LayoutEngine(private val schema: SchemaRegistry) {
                     currentOffset -= childSize
                     contentArea.x + currentOffset
                 } else {
-                    val pos = contentArea.x + currentOffset
-                    currentOffset += childSize
-                    pos
+                    contentArea.x + currentOffset
                 }
                 Rect(x, contentArea.y, childSize, contentArea.height)
+            }
+
+            calculateElementBounds(child, childRect, results)
+
+            // Advance offset to the child's actual visual end position.
+            // Each child's position is based on where the previous child visually ends,
+            // not a fixed sequential slot. This means negative offsets (e.g. Top: -60)
+            // pull the flow backward, so subsequent siblings start closer to the shifted
+            // element's visual end rather than being pushed down by the unshifted slot.
+            if (!isReversed) {
+                val actualBounds = results[child]?.bounds
+                currentOffset = if (isVertical) {
+                    actualBounds?.let { it.y + it.height - contentArea.y }
+                        ?: (currentOffset + childSize)
+                } else {
+                    actualBounds?.let { it.x + it.width - contentArea.x }
+                        ?: (currentOffset + childSize)
+                }
             }
 
             // Add inter-child spacing
             if (spacing > 0f) {
                 if (isReversed) currentOffset -= spacing else currentOffset += spacing
             }
-
-            calculateElementBounds(child, childRect, results)
         }
     }
 
@@ -405,46 +425,6 @@ class LayoutEngine(private val schema: SchemaRegistry) {
         }
     }
 
-    /**
-     * Calculate bounds for centered layout (Middle / Center).
-     * Element is centered within parent bounds.
-     *
-     * @param element The element to center
-     * @param parentBounds The parent's bounds
-     * @return Calculated bounds
-     */
-    private fun calculateCenterLayout(
-        element: UIElement,
-        parentBounds: Rect
-    ): Rect {
-        // Get element's size from Anchor (Width/Height)
-        val anchor = element.getProperty("Anchor") as? PropertyValue.Anchor
-        if (anchor == null) {
-            // No anchor - default to fill parent
-            return parentBounds
-        }
-
-        // Calculate width and height
-        val width = anchor.anchor.width?.let {
-            when (it) {
-                is AnchorDimension.Absolute -> it.pixels
-                is AnchorDimension.Relative -> it.ratio * parentBounds.width
-            }
-        } ?: parentBounds.width
-
-        val height = anchor.anchor.height?.let {
-            when (it) {
-                is AnchorDimension.Absolute -> it.pixels
-                is AnchorDimension.Relative -> it.ratio * parentBounds.height
-            }
-        } ?: parentBounds.height
-
-        // Center within parent
-        val x = parentBounds.x + (parentBounds.width - width) / 2f
-        val y = parentBounds.y + (parentBounds.height - height) / 2f
-
-        return Rect(x, y, width, height)
-    }
 
     /**
      * Layout direction for stack layouts
