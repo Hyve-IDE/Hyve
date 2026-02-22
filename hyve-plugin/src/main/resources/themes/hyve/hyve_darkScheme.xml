@@ -555,5 +555,93 @@
         <option name="FOREGROUND" value="4A4A5A"/>
       </value>
     </option>
+    <!-- ── Hytale UI (.ui files) ── -->
+
+    <!-- Element type declarations (Group {, Label #Title {) — honey gold, bold -->
+    <option name="HYTALE_UI_ELEMENT_TYPE_NAME">
+      <value>
+        <option name="FOREGROUND" value="F7A800"/>
+        <option name="FONT_TYPE" value="1"/>
+      </value>
+    </option>
+
+    <!-- Other identifiers (property names, values) — purple like classes -->
+    <option name="HYTALE_UI_IDENTIFIER">
+      <value>
+        <option name="FOREGROUND" value="9D8CFF"/>
+      </value>
+    </option>
+
+    <!-- String literals — green -->
+    <option name="HYTALE_UI_STRING">
+      <value>
+        <option name="FOREGROUND" value="4ADE80"/>
+      </value>
+    </option>
+
+    <!-- Numbers — blue -->
+    <option name="HYTALE_UI_NUMBER">
+      <value>
+        <option name="FOREGROUND" value="60A5FA"/>
+      </value>
+    </option>
+
+    <!-- Percentages — blue -->
+    <option name="HYTALE_UI_PERCENT">
+      <value>
+        <option name="FOREGROUND" value="60A5FA"/>
+      </value>
+    </option>
+
+    <!-- Color literals (#ffffff) — blue -->
+    <option name="HYTALE_UI_COLOR">
+      <value>
+        <option name="FOREGROUND" value="60A5FA"/>
+      </value>
+    </option>
+
+    <!-- Booleans (true/false) — honey gold, bold -->
+    <option name="HYTALE_UI_BOOLEAN">
+      <value>
+        <option name="FOREGROUND" value="F7A800"/>
+        <option name="FONT_TYPE" value="1"/>
+      </value>
+    </option>
+
+    <!-- Localization keys (%client.menu.title) — amber -->
+    <option name="HYTALE_UI_LOCALIZED_KEY">
+      <value>
+        <option name="FOREGROUND" value="FBBF24"/>
+      </value>
+    </option>
+
+    <!-- $ variable prefix — purple like global vars -->
+    <option name="HYTALE_UI_VARIABLE_PREFIX">
+      <value>
+        <option name="FOREGROUND" value="9D8CFF"/>
+      </value>
+    </option>
+
+    <!-- @ style prefix — amber like annotations -->
+    <option name="HYTALE_UI_STYLE_PREFIX">
+      <value>
+        <option name="FOREGROUND" value="FBBF24"/>
+      </value>
+    </option>
+
+    <!-- # ID prefix — default text, blends with punctuation -->
+    <option name="HYTALE_UI_ID_PREFIX">
+      <value>
+        <option name="FOREGROUND" value="EAEAEA"/>
+      </value>
+    </option>
+
+    <!-- Comments — gray, italic -->
+    <option name="HYTALE_UI_COMMENT">
+      <value>
+        <option name="FOREGROUND" value="8A8A9A"/>
+        <option name="FONT_TYPE" value="2"/>
+      </value>
+    </option>
   </attributes>
 </scheme>

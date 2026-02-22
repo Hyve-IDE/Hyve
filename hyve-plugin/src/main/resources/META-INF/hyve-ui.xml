@@ -17,6 +17,21 @@
         id="Hyve UI Editor"
         displayType="BALLOON"
         isLogByDefault="true"/>
+
+    <lang.syntaxHighlighterFactory
+        language="HytaleUI"
+        implementationClass="com.hyve.ui.highlight.HyveUISyntaxHighlighterFactory"/>
+
+    <colorSettingsPage
+        implementation="com.hyve.ui.highlight.HyveUIColorSettingsPage"/>
+
+    <lang.braceMatcher
+        language="HytaleUI"
+        implementationClass="com.hyve.ui.highlight.HyveUIBraceMatcher"/>
+
+    <lang.commenter
+        language="HytaleUI"
+        implementationClass="com.hyve.ui.highlight.HyveUICommenter"/>
   </extensions>
 
   <actions>
