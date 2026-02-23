@@ -26,6 +26,11 @@ object HytaleInstallPath {
     private const val KEY = "hytale.install.path"
     private const val SEED_FILE_NAME = "hytale-install.path"
 
+    // ── Override keys ────────────────────────────────────────────
+    const val KEY_ASSETS_ZIP = "hytale.assets.zip.path"
+    const val KEY_SERVER_JAR = "hytale.server.jar.path"
+    const val KEY_SERVER_MODS = "hytale.server.mods.path"
+
     init {
         importSeedFile()
     }
@@ -54,6 +59,21 @@ object HytaleInstallPath {
         return HytalePathDetector.isValidInstallPath(path)
     }
 
+    // ── Per-path overrides ──────────────────────────────────────
+
+    fun getOverride(key: String): String? = prefs.get(key, null)
+
+    fun setOverride(key: String, path: String) {
+        prefs.put(key, path)
+    }
+
+    fun clearOverride(key: String) {
+        prefs.remove(key)
+    }
+
+    /** Returns true if the given key has a user-specified override (not derived). */
+    fun hasOverride(key: String): Boolean = prefs.get(key, null) != null
+
     // ── Derived paths ───────────────────────────────────────────
 
     /**
@@ -73,7 +93,10 @@ object HytaleInstallPath {
         return root
     }
 
-    fun assetsZipPath(): Path? = dataRoot()?.resolve("Assets.zip")
+    fun assetsZipPath(): Path? {
+        getOverride(KEY_ASSETS_ZIP)?.let { return Paths.get(it) }
+        return dataRoot()?.resolve("Assets.zip")
+    }
 
     fun clientFolderPath(): Path? = get()?.resolve("Client")
 
@@ -122,9 +145,15 @@ object HytaleInstallPath {
         if (path.toFile().isDirectory) list.add(path)
     }
 
-    fun serverJarPath(): Path? = dataRoot()?.resolve("Server/HytaleServer.jar")
+    fun serverJarPath(): Path? {
+        getOverride(KEY_SERVER_JAR)?.let { return Paths.get(it) }
+        return dataRoot()?.resolve("Server/HytaleServer.jar")
+    }
 
-    fun serverModsPath(): Path? = dataRoot()?.resolve("Server/Mods")
+    fun serverModsPath(): Path? {
+        getOverride(KEY_SERVER_MODS)?.let { return Paths.get(it) }
+        return dataRoot()?.resolve("Server/Mods")
+    }
 
     // ── Seed file import ────────────────────────────────────────
 

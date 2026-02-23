@@ -4,6 +4,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import javax.swing.JCheckBox
 import javax.swing.JComponent
@@ -18,12 +19,24 @@ class HytaleServerSettingsEditor(
     private val debugPortField = JTextField()
     private val vmArgsField = JTextField()
     private val programArgsField = JTextField()
+    private val serverJarOverrideField = TextFieldWithBrowseButton()
+    private val assetsZipOverrideField = TextFieldWithBrowseButton()
 
     init {
         installPathField.addBrowseFolderListener(
             project,
             FileChooserDescriptorFactory.createSingleFolderDescriptor()
                 .withTitle("Select Hytale Installation")
+        )
+        serverJarOverrideField.addBrowseFolderListener(
+            project,
+            FileChooserDescriptorFactory.createSingleFileDescriptor("jar")
+                .withTitle("Select HytaleServer.jar")
+        )
+        assetsZipOverrideField.addBrowseFolderListener(
+            project,
+            FileChooserDescriptorFactory.createSingleFileDescriptor("zip")
+                .withTitle("Select Assets.zip")
         )
         debugCheckbox.addActionListener {
             debugPortField.isEnabled = debugCheckbox.isSelected
@@ -60,6 +73,21 @@ class HytaleServerSettingsEditor(
                 .align(AlignX.FILL)
                 .comment("Arguments passed to HytaleServer.jar")
         }
+
+        collapsibleGroup("Advanced") {
+            row("Server jar:") {
+                cell(serverJarOverrideField)
+                    .align(AlignX.FILL)
+                    .resizableColumn()
+                    .comment("Override path to HytaleServer.jar (blank = {install path}/Server/HytaleServer.jar)")
+            }
+            row("Assets zip:") {
+                cell(assetsZipOverrideField)
+                    .align(AlignX.FILL)
+                    .resizableColumn()
+                    .comment("Override path to Assets.zip (blank = {install path}/Assets.zip)")
+            }
+        }
     }
 
     override fun applyEditorTo(config: HytaleServerRunConfiguration) {
@@ -68,6 +96,8 @@ class HytaleServerSettingsEditor(
         config.debugPort = debugPortField.text.toIntOrNull() ?: 5005
         config.vmArgs = vmArgsField.text
         config.programArgs = programArgsField.text
+        config.serverJarPath = serverJarOverrideField.text
+        config.assetsZipPath = assetsZipOverrideField.text
     }
 
     override fun resetEditorFrom(config: HytaleServerRunConfiguration) {
@@ -77,5 +107,16 @@ class HytaleServerSettingsEditor(
         debugPortField.text = config.debugPort.toString()
         vmArgsField.text = config.vmArgs
         programArgsField.text = config.programArgs
+        serverJarOverrideField.text = config.serverJarPath
+        assetsZipOverrideField.text = config.assetsZipPath
+
+        // Show derived defaults as placeholder text
+        val installPath = config.installPath
+        (serverJarOverrideField.textField as? JBTextField)?.emptyText?.setText(
+            if (installPath.isNotBlank()) "$installPath/Server/HytaleServer.jar" else "Derived from install path"
+        )
+        (assetsZipOverrideField.textField as? JBTextField)?.emptyText?.setText(
+            if (installPath.isNotBlank()) "$installPath/Assets.zip" else "Derived from install path"
+        )
     }
 }

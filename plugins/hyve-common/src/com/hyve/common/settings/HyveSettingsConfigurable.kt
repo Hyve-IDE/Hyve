@@ -5,6 +5,8 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBTextField
+import com.intellij.ui.TitledSeparator
 import com.intellij.util.ui.FormBuilder
 import java.io.File
 import javax.swing.JButton
@@ -30,6 +32,11 @@ class HyveSettingsConfigurable : SearchableConfigurable {
     private var assetsStatusLabel: JBLabel? = null
     private var clientStatusLabel: JBLabel? = null
     private var serverStatusLabel: JBLabel? = null
+
+    // Path override fields
+    private var assetsZipOverrideField: TextFieldWithBrowseButton? = null
+    private var serverJarOverrideField: TextFieldWithBrowseButton? = null
+    private var modsOverrideField: TextFieldWithBrowseButton? = null
 
     override fun getId(): String = ID
 
@@ -72,6 +79,73 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             })
         }
 
+        // --- Path override fields ---
+        val derivedAssets = HytaleInstallPath.assetsZipPath()?.toString() ?: ""
+        val derivedJar = HytaleInstallPath.serverJarPath()?.toString() ?: ""
+        val derivedMods = HytaleInstallPath.serverModsPath()?.toString() ?: ""
+
+        assetsZipOverrideField = TextFieldWithBrowseButton().apply {
+            text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
+            addBrowseFolderListener(
+                null,
+                FileChooserDescriptorFactory.createSingleFileDescriptor("zip")
+                    .withTitle("Select Assets.zip")
+                    .withDescription("Choose the Hytale Assets.zip file")
+            )
+            (textField as? JBTextField)?.emptyText?.setText(derivedAssets.ifBlank { "Derived from install path" })
+        }
+
+        serverJarOverrideField = TextFieldWithBrowseButton().apply {
+            text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
+            addBrowseFolderListener(
+                null,
+                FileChooserDescriptorFactory.createSingleFileDescriptor("jar")
+                    .withTitle("Select HytaleServer.jar")
+                    .withDescription("Choose the Hytale server JAR file")
+            )
+            (textField as? JBTextField)?.emptyText?.setText(derivedJar.ifBlank { "Derived from install path" })
+        }
+
+        modsOverrideField = TextFieldWithBrowseButton().apply {
+            text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_MODS) ?: ""
+            addBrowseFolderListener(
+                null,
+                FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                    .withTitle("Select Mods Folder")
+                    .withDescription("Choose the Hytale server mods directory")
+            )
+            (textField as? JBTextField)?.emptyText?.setText(derivedMods.ifBlank { "Derived from install path" })
+        }
+
+        val browseFolderButton = JButton("Browse Folder\u2026").apply {
+            addActionListener {
+                val chooser = javax.swing.JFileChooser().apply {
+                    fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
+                    dialogTitle = "Select folder containing Hytale files"
+                }
+                if (chooser.showOpenDialog(mainPanel) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                    val dir = chooser.selectedFile
+                    val zip = File(dir, "Assets.zip")
+                    if (zip.isFile) assetsZipOverrideField?.text = zip.absolutePath
+                    val jar = File(dir, "Server/HytaleServer.jar")
+                    if (jar.isFile) serverJarOverrideField?.text = jar.absolutePath
+                    val mods = File(dir, "Server/Mods")
+                    if (mods.isDirectory) modsOverrideField?.text = mods.absolutePath
+                }
+            }
+        }
+
+        val overrideButtonsPanel = JPanel(FlowLayout(FlowLayout.LEFT, 5, 0)).apply {
+            add(browseFolderButton)
+            add(JButton("Clear Overrides").apply {
+                addActionListener {
+                    assetsZipOverrideField?.text = ""
+                    serverJarOverrideField?.text = ""
+                    modsOverrideField?.text = ""
+                }
+            })
+        }
+
         updateAllStatusLabels()
 
         mainPanel = FormBuilder.createFormBuilder()
@@ -86,6 +160,13 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             .addComponent(assetsStatusLabel!!)
             .addComponent(clientStatusLabel!!)
             .addComponent(serverStatusLabel!!)
+            .addSeparator()
+            .addComponent(TitledSeparator("Path Overrides"))
+            .addComponent(JBLabel("<html><font size='-2' color='gray'>Override individual paths when they differ from the install path. Leave blank to use derived defaults.</font></html>"))
+            .addLabeledComponent("Assets zip:", assetsZipOverrideField!!)
+            .addLabeledComponent("Server jar:", serverJarOverrideField!!)
+            .addLabeledComponent("Mods folder:", modsOverrideField!!)
+            .addComponent(overrideButtonsPanel)
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
@@ -119,12 +200,22 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             statusLabel?.text = "<html><font color='#CC7832'>Server/HytaleServer.jar not found</font></html>"
         }
 
-        // Assets.zip status
-        val assetsZip = File(root, "Assets.zip")
-        assetsStatusLabel?.text = if (assetsZip.exists()) {
-            "<html><font color='#6A8759'>  Assets.zip found</font></html>"
+        // Assets.zip — check override first, then derived
+        val assetsOverride = assetsZipOverrideField?.text?.takeIf { it.isNotBlank() }
+        if (assetsOverride != null) {
+            val overrideFile = File(assetsOverride)
+            assetsStatusLabel?.text = if (overrideFile.isFile) {
+                "<html><font color='#6A8759'>  Assets.zip (override): $assetsOverride</font></html>"
+            } else {
+                "<html><font color='#CC7832'>  Assets.zip override not found: $assetsOverride</font></html>"
+            }
         } else {
-            "<html><font color='#CC7832'>  Assets.zip not found</font></html>"
+            val assetsZip = File(root, "Assets.zip")
+            assetsStatusLabel?.text = if (assetsZip.exists()) {
+                "<html><font color='#6A8759'>  Assets.zip found</font></html>"
+            } else {
+                "<html><font color='#CC7832'>  Assets.zip not found</font></html>"
+            }
         }
 
         // Client folder + .ui file count
@@ -141,18 +232,42 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             "<html><font color='#CC7832'>  Client folder not found</font></html>"
         }
 
-        // Server jar status
-        serverStatusLabel?.text = if (serverJar.exists()) {
-            "<html><font color='#6A8759'>  Server/HytaleServer.jar found</font></html>"
+        // Server jar — check override first, then derived
+        val jarOverride = serverJarOverrideField?.text?.takeIf { it.isNotBlank() }
+        if (jarOverride != null) {
+            val overrideFile = File(jarOverride)
+            serverStatusLabel?.text = if (overrideFile.isFile) {
+                "<html><font color='#6A8759'>  Server jar (override): $jarOverride</font></html>"
+            } else {
+                "<html><font color='#CC7832'>  Server jar override not found: $jarOverride</font></html>"
+            }
         } else {
-            "<html><font color='#CC7832'>  Server/HytaleServer.jar not found</font></html>"
+            serverStatusLabel?.text = if (serverJar.exists()) {
+                "<html><font color='#6A8759'>  Server/HytaleServer.jar found</font></html>"
+            } else {
+                "<html><font color='#CC7832'>  Server/HytaleServer.jar not found</font></html>"
+            }
         }
     }
 
     override fun isModified(): Boolean {
         val current = installPathField?.text ?: ""
         val saved = HytaleInstallPath.get()?.toString() ?: ""
-        return current != saved
+        if (current != saved) return true
+
+        val assetsOverride = assetsZipOverrideField?.text ?: ""
+        val savedAssets = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
+        if (assetsOverride != savedAssets) return true
+
+        val jarOverride = serverJarOverrideField?.text ?: ""
+        val savedJar = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
+        if (jarOverride != savedJar) return true
+
+        val modsOverride = modsOverrideField?.text ?: ""
+        val savedMods = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_MODS) ?: ""
+        if (modsOverride != savedMods) return true
+
+        return false
     }
 
     override fun apply() {
@@ -162,11 +277,27 @@ class HyveSettingsConfigurable : SearchableConfigurable {
         } else {
             HytaleInstallPath.clear()
         }
+
+        applyOverride(HytaleInstallPath.KEY_ASSETS_ZIP, assetsZipOverrideField?.text)
+        applyOverride(HytaleInstallPath.KEY_SERVER_JAR, serverJarOverrideField?.text)
+        applyOverride(HytaleInstallPath.KEY_SERVER_MODS, modsOverrideField?.text)
+
         updateAllStatusLabels()
+    }
+
+    private fun applyOverride(key: String, value: String?) {
+        if (!value.isNullOrBlank()) {
+            HytaleInstallPath.setOverride(key, value)
+        } else {
+            HytaleInstallPath.clearOverride(key)
+        }
     }
 
     override fun reset() {
         installPathField?.text = HytaleInstallPath.get()?.toString() ?: ""
+        assetsZipOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
+        serverJarOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
+        modsOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_MODS) ?: ""
         updateAllStatusLabels()
     }
 }

@@ -15,6 +15,10 @@ data class ModTemplateContext(
     val description: String,
     val license: String,
     val hytaleInstallPath: String,
+    /** Override for the server jar path; blank = derive from install path. */
+    val serverJarPath: String = "",
+    /** Override for the assets zip path; blank = derive from install path. */
+    val assetsZipPath: String = "",
 )
 
 object HytaleModTemplates {
@@ -37,9 +41,12 @@ object HytaleModTemplates {
         appendLine("}")
         appendLine()
         appendLine("val hytaleInstallPath: String by project")
+        appendLine("val hytaleServerJarPath: String by project")
+        appendLine()
+        appendLine("val resolvedServerJar = hytaleServerJarPath.ifBlank { \"\$hytaleInstallPath/Server/HytaleServer.jar\" }")
         appendLine()
         appendLine("dependencies {")
-        appendLine("    compileOnly(files(\"\$hytaleInstallPath/Server/HytaleServer.jar\"))")
+        appendLine("    compileOnly(files(resolvedServerJar))")
         appendLine("}")
         appendLine()
         appendLine("java {")
@@ -60,10 +67,10 @@ object HytaleModTemplates {
         appendLine()
         appendLine("tasks.register<Copy>(\"deployMod\") {")
         appendLine("    group = \"hytale\"")
-        appendLine("    description = \"Builds the mod and copies it to the Hytale server mods folder.\"")
+        appendLine("    description = \"Builds the mod and copies it to the project-local server mods folder.\"")
         appendLine("    dependsOn(tasks.shadowJar)")
         appendLine("    from(tasks.shadowJar.flatMap { it.archiveFile })")
-        appendLine("    into(\"\$hytaleInstallPath/Server/mods\")")
+        appendLine("    into(\"\$projectDir/.hytale-server/mods\")")
         appendLine("}")
         appendLine()
         appendLine("tasks.register(\"cleanDeploy\") {")
@@ -85,6 +92,10 @@ object HytaleModTemplates {
         appendLine("# Hytale installation path")
         appendLine("# Inherited from IDE settings. Edit for project-specific override.")
         appendLine("hytaleInstallPath=${toForwardSlashes(ctx.hytaleInstallPath)}")
+        appendLine()
+        appendLine("# Path overrides (leave blank to derive from hytaleInstallPath)")
+        appendLine("hytaleServerJarPath=${toForwardSlashes(ctx.serverJarPath)}")
+        appendLine("hytaleAssetsZipPath=${toForwardSlashes(ctx.assetsZipPath)}")
         appendLine()
         appendLine("# Gradle settings")
         appendLine("org.gradle.jvmargs=-Xmx2g -XX:+UseG1GC")
@@ -196,15 +207,25 @@ object HytaleModTemplates {
     private fun serverConfiguration(ctx: ModTemplateContext, name: String, vmParameters: String): String = buildString {
         val installPath = toForwardSlashes(ctx.hytaleInstallPath)
         val pd = "\$PROJECT_DIR\$"
-        val jarPath = "$installPath/Server/HytaleServer.jar"
-        val programArgs = "--assets $installPath/Assets.zip --allow-op --disable-sentry"
+        val jarPath = if (ctx.serverJarPath.isNotBlank()) {
+            toForwardSlashes(ctx.serverJarPath)
+        } else {
+            "$installPath/Server/HytaleServer.jar"
+        }
+        val assetsPath = if (ctx.assetsZipPath.isNotBlank()) {
+            toForwardSlashes(ctx.assetsZipPath)
+        } else {
+            "$installPath/Assets.zip"
+        }
+        val programArgs = "--assets $assetsPath --allow-op --disable-sentry"
+        val workDir = "$pd/.hytale-server"
         appendLine("""<component name="ProjectRunConfigurationManager">""")
         appendLine("""  <configuration default="false" name="${escapeXml(name)}" type="JarApplication">""")
         appendLine("""    <option name="ALTERNATIVE_JRE_PATH" value="${HytaleVersions.JDK}" />""")
         appendLine("""    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />""")
         appendLine("""    <option name="JAR_PATH" value="${escapeXml(jarPath)}" />""")
         appendLine("""    <option name="PROGRAM_PARAMETERS" value="${escapeXml(programArgs)}" />""")
-        appendLine("""    <option name="WORKING_DIRECTORY" value="${escapeXml("$installPath/Server")}" />""")
+        appendLine("""    <option name="WORKING_DIRECTORY" value="${escapeXml(workDir)}" />""")
         appendLine("""    <option name="VM_PARAMETERS" value="${escapeXml(vmParameters)}" />""")
         appendLine("""    <method v="2">""")
         appendLine("""      <option name="Gradle.BeforeRunTask" enabled="true" tasks="deployMod" externalProjectPath="$pd" />""")
@@ -261,6 +282,7 @@ object HytaleModTemplates {
         appendLine("*.iml")
         appendLine("out/")
         appendLine("local.properties")
+        appendLine(".hytale-server/")
     }
 
     fun toModId(projectName: String): String {

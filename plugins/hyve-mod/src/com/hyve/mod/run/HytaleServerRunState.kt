@@ -21,17 +21,31 @@ class HytaleServerRunState(
 ) : CommandLineState(environment) {
 
     override fun startProcess(): ProcessHandler {
-        if (config.installPath.isBlank()) {
+        if (config.installPath.isBlank() && config.serverJarPath.isBlank()) {
             throw ExecutionException("Hytale install path is not configured")
         }
 
-        val serverDir = File(config.installPath, "Server")
-        val serverJar = File(serverDir, "HytaleServer.jar")
+        // Resolve server jar: config override → installPath-derived
+        val serverJar = if (config.serverJarPath.isNotBlank()) {
+            File(config.serverJarPath)
+        } else {
+            File(config.installPath, "Server/HytaleServer.jar")
+        }
         if (!serverJar.isFile) {
             throw ExecutionException("HytaleServer.jar not found at ${serverJar.absolutePath}")
         }
 
-        deployBundledHotreloadMod(serverDir)
+        // Project-local workspace
+        val projectDir = environment.project.basePath
+            ?: throw ExecutionException("Cannot determine project directory")
+        val workDir = File(projectDir, ".hytale-server")
+        workDir.mkdirs()
+
+        // Ensure mods directory exists
+        val modsDir = File(workDir, "mods")
+        modsDir.mkdirs()
+
+        deployBundledHotreloadMod(modsDir)
 
         val javaExe = resolveJava()
         val cmd = GeneralCommandLine(javaExe)
@@ -47,7 +61,7 @@ class HytaleServerRunState(
         }
 
         cmd.addParameter("-jar")
-        cmd.addParameter("HytaleServer.jar")
+        cmd.addParameter(serverJar.absolutePath)
 
         // Auto-inject --assets if not already specified
         val parsedArgs = if (config.programArgs.isNotBlank()) {
@@ -56,7 +70,12 @@ class HytaleServerRunState(
             emptyList()
         }
         if (!parsedArgs.contains("--assets")) {
-            val assetsZip = File(config.installPath, "Assets.zip")
+            // Resolve assets zip: config override → installPath-derived
+            val assetsZip = if (config.assetsZipPath.isNotBlank()) {
+                File(config.assetsZipPath)
+            } else {
+                File(config.installPath, "Assets.zip")
+            }
             if (assetsZip.isFile) {
                 cmd.addParameters("--assets", assetsZip.absolutePath)
             }
@@ -65,7 +84,7 @@ class HytaleServerRunState(
         // Program args (quote-aware parsing)
         cmd.addParameters(parsedArgs)
 
-        cmd.workDirectory = serverDir
+        cmd.workDirectory = workDir
         cmd.charset = Charsets.UTF_8
 
         val handler = ColoredProcessHandler(cmd)
@@ -95,7 +114,7 @@ class HytaleServerRunState(
         return "java"
     }
 
-    private fun deployBundledHotreloadMod(serverDir: File) {
+    private fun deployBundledHotreloadMod(modsDir: File) {
         try {
             val jarName = "hyve-hotreload.jar"
             val bundledJar = findBundledJar(jarName)
@@ -104,7 +123,6 @@ class HytaleServerRunState(
                 return
             }
 
-            val modsDir = File(serverDir, "mods")
             modsDir.mkdirs()
             bundledJar.copyTo(File(modsDir, jarName), overwrite = true)
             LOG.info("Deployed bundled hot-reload mod to ${modsDir.absolutePath}")

@@ -154,11 +154,11 @@ class HytaleModTemplatesTest {
     }
 
     @Test
-    fun `buildGradleKts contains deployMod task`() {
+    fun `buildGradleKts contains deployMod task targeting project-local mods`() {
         val content = HytaleModTemplates.buildGradleKts(baseCtx)
         assertTrue(content.contains("tasks.register<Copy>(\"deployMod\")"))
         assertTrue(content.contains("dependsOn(tasks.shadowJar)"))
-        assertTrue(content.contains("\$hytaleInstallPath/Server/mods"))
+        assertTrue(content.contains(".hytale-server/mods"))
     }
 
     @Test
@@ -169,14 +169,21 @@ class HytaleModTemplatesTest {
     }
 
     @Test
-    fun `runServerConfiguration uses correct main class and flags`() {
+    fun `runServerConfiguration uses JarApplication with correct paths`() {
         val content = HytaleModTemplates.runServerConfiguration(baseCtx)
-        assertTrue(content.contains("com.hypixel.hytale.Main"))
-        assertTrue(content.contains("--mods C:/Games/Hytale/Server/mods"))
+        assertTrue(content.contains("type=\"JarApplication\""))
+        assertTrue(content.contains("C:/Games/Hytale/Server/HytaleServer.jar"))
+        assertTrue(content.contains("--assets C:/Games/Hytale/Assets.zip"))
         assertTrue(content.contains("--disable-sentry"))
         assertTrue(content.contains("--allow-op"))
         assertTrue(content.contains("deployMod"))
-        assertTrue(!content.contains("HytaleServer.jar"))
+        assertTrue(content.contains(".hytale-server"))
+    }
+
+    @Test
+    fun `runServerConfiguration uses project-local working directory`() {
+        val content = HytaleModTemplates.runServerConfiguration(baseCtx)
+        assertTrue(content.contains("\$PROJECT_DIR\$/.hytale-server"))
     }
 
     @Test
@@ -184,7 +191,7 @@ class HytaleModTemplatesTest {
         val content = HytaleModTemplates.debugServerConfiguration(baseCtx)
         assertTrue(content.contains("agentlib:jdwp"))
         assertTrue(content.contains("address=*:5005"))
-        assertTrue(content.contains("com.hypixel.hytale.Main"))
+        assertTrue(content.contains("type=\"JarApplication\""))
         assertTrue(content.contains("deployMod"))
     }
 
@@ -270,5 +277,114 @@ class HytaleModTemplatesTest {
         val content = HytaleModTemplates.runServerConfiguration(ctx)
         assertTrue(content.contains("C:/Games/Hytale/Server"))
         assertTrue(!content.contains("\\Games\\"))
+    }
+
+    // --- Path override tests ---
+
+    @Test
+    fun `buildGradleKts declares hytaleServerJarPath property`() {
+        val content = HytaleModTemplates.buildGradleKts(baseCtx)
+        assertTrue(content.contains("val hytaleServerJarPath: String by project"))
+    }
+
+    @Test
+    fun `buildGradleKts resolves server jar with ifBlank fallback`() {
+        val content = HytaleModTemplates.buildGradleKts(baseCtx)
+        assertTrue(content.contains("hytaleServerJarPath.ifBlank"))
+        assertTrue(content.contains("HytaleServer.jar"))
+    }
+
+    @Test
+    fun `buildGradleKts uses resolvedServerJar in compileOnly`() {
+        val content = HytaleModTemplates.buildGradleKts(baseCtx)
+        assertTrue(content.contains("compileOnly(files(resolvedServerJar))"))
+    }
+
+    @Test
+    fun `gradleProperties includes override properties`() {
+        val content = HytaleModTemplates.gradleProperties(baseCtx)
+        assertTrue(content.contains("hytaleServerJarPath="))
+        assertTrue(content.contains("hytaleAssetsZipPath="))
+    }
+
+    @Test
+    fun `gradleProperties populates override when provided`() {
+        val ctx = baseCtx.copy(
+            serverJarPath = "D:\\Custom\\HytaleServer.jar",
+            assetsZipPath = "D:\\Custom\\Assets.zip",
+        )
+        val content = HytaleModTemplates.gradleProperties(ctx)
+        assertTrue(content.contains("hytaleServerJarPath=D:/Custom/HytaleServer.jar"))
+        assertTrue(content.contains("hytaleAssetsZipPath=D:/Custom/Assets.zip"))
+    }
+
+    @Test
+    fun `gradleProperties leaves overrides blank when not provided`() {
+        val content = HytaleModTemplates.gradleProperties(baseCtx)
+        assertTrue(content.contains("hytaleServerJarPath=\n") || content.contains("hytaleServerJarPath=\r"))
+    }
+
+    @Test
+    fun `serverConfiguration uses override jar path when provided`() {
+        val ctx = baseCtx.copy(serverJarPath = "D:/Custom/HytaleServer.jar")
+        val content = HytaleModTemplates.runServerConfiguration(ctx)
+        assertTrue(content.contains("D:/Custom/HytaleServer.jar"))
+        assertTrue(!content.contains("C:/Games/Hytale/Server/HytaleServer.jar"))
+    }
+
+    @Test
+    fun `serverConfiguration uses override assets path when provided`() {
+        val ctx = baseCtx.copy(assetsZipPath = "D:/Custom/Assets.zip")
+        val content = HytaleModTemplates.runServerConfiguration(ctx)
+        assertTrue(content.contains("--assets D:/Custom/Assets.zip"))
+        assertTrue(!content.contains("C:/Games/Hytale/Assets.zip"))
+    }
+
+    @Test
+    fun `serverConfiguration falls back to install path when no overrides`() {
+        val content = HytaleModTemplates.runServerConfiguration(baseCtx)
+        assertTrue(content.contains("C:/Games/Hytale/Server/HytaleServer.jar"))
+        assertTrue(content.contains("--assets C:/Games/Hytale/Assets.zip"))
+    }
+
+    @Test
+    fun `serverConfiguration converts backslashes in override paths`() {
+        val ctx = baseCtx.copy(
+            serverJarPath = "D:\\Custom\\HytaleServer.jar",
+            assetsZipPath = "D:\\Custom\\Assets.zip",
+        )
+        val content = HytaleModTemplates.runServerConfiguration(ctx)
+        assertTrue(content.contains("D:/Custom/HytaleServer.jar"))
+        assertTrue(content.contains("D:/Custom/Assets.zip"))
+        assertTrue(!content.contains("\\Custom\\"))
+    }
+
+    // --- Project-local workspace tests ---
+
+    @Test
+    fun `gitignore includes hytale-server directory`() {
+        val content = HytaleModTemplates.gitignore()
+        assertTrue(content.contains(".hytale-server/"))
+    }
+
+    @Test
+    fun `buildGradleKts deploys to project-local mods directory`() {
+        val content = HytaleModTemplates.buildGradleKts(baseCtx)
+        assertTrue(content.contains("\$projectDir/.hytale-server/mods"))
+        assertTrue(!content.contains("\$hytaleInstallPath/Server/mods"))
+    }
+
+    @Test
+    fun `runServerConfiguration working directory is project-local`() {
+        val content = HytaleModTemplates.runServerConfiguration(baseCtx)
+        assertTrue(content.contains("WORKING_DIRECTORY"))
+        assertTrue(content.contains("\$PROJECT_DIR\$/.hytale-server"))
+        assertTrue(!content.contains("C:/Games/Hytale/Server\" />"))
+    }
+
+    @Test
+    fun `debugServerConfiguration working directory is project-local`() {
+        val content = HytaleModTemplates.debugServerConfiguration(baseCtx)
+        assertTrue(content.contains("\$PROJECT_DIR\$/.hytale-server"))
     }
 }

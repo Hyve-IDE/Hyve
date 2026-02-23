@@ -21,6 +21,11 @@ class HytaleServerRunConfiguration(
     var vmArgs: String = ""
     var programArgs: String = "--allow-op --disable-sentry"
 
+    /** Override for server jar path; blank = derive from installPath. */
+    var serverJarPath: String = ""
+    /** Override for assets zip path; blank = derive from installPath. */
+    var assetsZipPath: String = ""
+
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
         return HytaleServerSettingsEditor(project)
     }
@@ -30,16 +35,20 @@ class HytaleServerRunConfiguration(
     }
 
     override fun checkConfiguration() {
-        if (installPath.isBlank()) {
+        if (installPath.isBlank() && serverJarPath.isBlank()) {
             throw RuntimeConfigurationWarning("Hytale install path is not set")
         }
-        // Check flat layout first (Windows/Linux), then macOS .app bundle layout
-        val flatJar = java.io.File(installPath, "Server/HytaleServer.jar")
-        if (!flatJar.isFile) {
-            val bundleJar = HytaleInstallPath.serverJarPath()?.toFile()
-            if (bundleJar == null || !bundleJar.isFile) {
-                throw RuntimeConfigurationWarning("Server/HytaleServer.jar not found at $installPath")
-            }
+        // Resolve the server jar: explicit override → installPath-derived → global setting
+        val resolvedJar = if (serverJarPath.isNotBlank()) {
+            java.io.File(serverJarPath)
+        } else {
+            val flatJar = java.io.File(installPath, "Server/HytaleServer.jar")
+            if (flatJar.isFile) flatJar
+            else HytaleInstallPath.serverJarPath()?.toFile()
+        }
+        if (resolvedJar == null || !resolvedJar.isFile) {
+            val display = serverJarPath.ifBlank { "$installPath/Server/HytaleServer.jar" }
+            throw RuntimeConfigurationWarning("Server jar not found: $display")
         }
         if (enableDebug && debugPort !in 1..65535) {
             throw RuntimeConfigurationWarning("Debug port must be between 1 and 65535")
@@ -53,6 +62,8 @@ class HytaleServerRunConfiguration(
         JDOMExternalizerUtil.writeField(element, "debugPort", debugPort.toString())
         JDOMExternalizerUtil.writeField(element, "vmArgs", vmArgs)
         JDOMExternalizerUtil.writeField(element, "programArgs", programArgs)
+        JDOMExternalizerUtil.writeField(element, "serverJarPath", serverJarPath)
+        JDOMExternalizerUtil.writeField(element, "assetsZipPath", assetsZipPath)
     }
 
     override fun readExternal(element: Element) {
@@ -62,5 +73,7 @@ class HytaleServerRunConfiguration(
         JDOMExternalizerUtil.readField(element, "debugPort")?.let { debugPort = it.toIntOrNull() ?: 5005 }
         JDOMExternalizerUtil.readField(element, "vmArgs")?.let { vmArgs = it }
         JDOMExternalizerUtil.readField(element, "programArgs")?.let { programArgs = it }
+        JDOMExternalizerUtil.readField(element, "serverJarPath")?.let { serverJarPath = it }
+        JDOMExternalizerUtil.readField(element, "assetsZipPath")?.let { assetsZipPath = it }
     }
 }

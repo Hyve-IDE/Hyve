@@ -115,7 +115,7 @@ class HytaleModWizardStep(
 
         row {
             @Suppress("DialogTitleCapitalization")
-            comment("Leave blank to configure later in Tools > Hyve")
+            comment("Leave blank to configure later in Tools > Hyve. Per-path overrides (assets, server jar, mods) can also be set there.")
         }
     }
 

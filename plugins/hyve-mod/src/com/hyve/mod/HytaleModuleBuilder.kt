@@ -1,5 +1,6 @@
 package com.hyve.mod
 
+import com.hyve.common.settings.HytaleInstallPath
 import com.intellij.icons.AllIcons
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorFile
@@ -80,6 +81,10 @@ class HytaleModuleBuilder : StarterModuleBuilder() {
             HytaleInstallSettings.getInstallPath()?.toString() ?: ""
         }
 
+        // Resolve per-path overrides from IDE settings
+        val serverJarOverride = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
+        val assetsZipOverride = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
+
         val ctx = ModTemplateContext(
             modId = modId,
             groupId = starterContext.group,
@@ -95,6 +100,8 @@ class HytaleModuleBuilder : StarterModuleBuilder() {
             description = modMetadata.description,
             license = modMetadata.license,
             hytaleInstallPath = installPath,
+            serverJarPath = serverJarOverride,
+            assetsZipPath = assetsZipOverride,
         )
 
         val packagePath = getPackagePath(starterContext.group, starterContext.artifact)
@@ -143,6 +150,9 @@ class HytaleModuleBuilder : StarterModuleBuilder() {
 
         // Empty test directory
         assets.add(GeneratorEmptyDirectory("src/test/$sourceDir/$packagePath"))
+
+        // Project-local server workspace
+        assets.add(GeneratorEmptyDirectory(".hytale-server"))
 
         return assets
     }
