@@ -1743,7 +1743,101 @@ class CanvasState(
         return _rootElement.value?.findDescendantById(id)
     }
 
+    // --- Z-Order Reordering ---
+
+    /**
+     * Reorder the single selected element within its parent's children list.
+     * Returns true if the reorder was applied, false if at boundary or no selection.
+     */
+    fun reorderElement(direction: ReorderDirection): Boolean {
+        val selected = selection.selectedElements.value
+        if (selected.size != 1) return false
+        val element = selected.first()
+        val root = _rootElement.value ?: return false
+
+        // Can't reorder the root element
+        if (element === root || (element.id != null && element.id == root.id)) return false
+
+        val (parent, currentIndex) = findParentAndIndex(root, element) ?: return false
+        val siblingCount = parent.children.size
+
+        val newIndex = when (direction) {
+            ReorderDirection.FORWARD -> currentIndex + 1
+            ReorderDirection.BACKWARD -> currentIndex - 1
+            ReorderDirection.TO_FRONT -> siblingCount - 1
+            ReorderDirection.TO_BACK -> 0
+        }
+
+        // Already at boundary
+        if (newIndex < 0 || newIndex >= siblingCount || newIndex == currentIndex) return false
+
+        val command = if (parent === root || (parent.id != null && parent.id == root.id)) {
+            ReorderElementCommand.forRootChild(element, currentIndex, newIndex)
+        } else {
+            ReorderElementCommand.forElement(parent, element, currentIndex, newIndex)
+        }
+
+        return executeCommand(command, allowMerge = false)
+    }
+
+    // --- Sibling Selection Cycling ---
+
+    /**
+     * Select the next sibling of the currently selected element (wraps around).
+     * If nothing is selected, selects the first child of root.
+     */
+    fun selectNextSibling() {
+        cycleSibling(forward = true)
+    }
+
+    /**
+     * Select the previous sibling of the currently selected element (wraps around).
+     * If nothing is selected, selects the last child of root.
+     */
+    fun selectPrevSibling() {
+        cycleSibling(forward = false)
+    }
+
+    private fun cycleSibling(forward: Boolean) {
+        val root = _rootElement.value ?: return
+
+        val selected = selection.selectedElements.value
+        if (selected.isEmpty()) {
+            // Nothing selected: select first/last child of root
+            if (root.children.isEmpty()) return
+            val index = if (forward) 0 else root.children.lastIndex
+            selectElement(root.children[index])
+            return
+        }
+
+        val element = selected.first()
+        val (parent, currentIndex) = findParentAndIndex(root, element) ?: return
+        if (parent.children.size <= 1) return
+
+        val newIndex = if (forward) {
+            (currentIndex + 1) % parent.children.size
+        } else {
+            (currentIndex - 1 + parent.children.size) % parent.children.size
+        }
+
+        selectElement(parent.children[newIndex])
+    }
+
     // getDefaultSizeForType, buildDefaultProperties → see ElementFactory.kt
+}
+
+/**
+ * Direction for z-order reordering operations.
+ */
+enum class ReorderDirection {
+    /** Move one step forward (higher index = drawn later = visually on top) */
+    FORWARD,
+    /** Move one step backward (lower index = drawn earlier = visually behind) */
+    BACKWARD,
+    /** Move to front (last index) */
+    TO_FRONT,
+    /** Move to back (index 0) */
+    TO_BACK
 }
 
 /**

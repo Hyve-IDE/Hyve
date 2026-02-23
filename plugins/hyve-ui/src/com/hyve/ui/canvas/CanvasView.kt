@@ -3,6 +3,7 @@ package com.hyve.ui.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.platform.LocalDensity
@@ -81,6 +83,7 @@ fun CanvasView(
     itemRegistry: ItemRegistry? = null,
     onOpenComposer: ((UIElement) -> Unit)? = null,
     composerOpen: Boolean = false,
+    onToggleHotkeyReference: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -568,67 +571,135 @@ fun CanvasView(
         )
         } // end ContextMenuArea
 
-        // Day/Night canvas mode toggle in top-right corner
-        val toggleInteraction = remember { MutableInteractionSource() }
-        val toggleHovered by toggleInteraction.collectIsHoveredAsState()
-        val toggleBg = when {
-            darkCanvas && toggleHovered -> Color(0xFF363650)
-            darkCanvas -> Color(0xFF2A2A3E)
-            toggleHovered -> Color(0xFFE8E8E8)
-            else -> Color.White.copy(alpha = 0.85f)
-        }
-        val toggleFg = if (darkCanvas) Color(0xFFCCCCDD) else Color(0xFF555555)
-        Box(
+        // Top-right toolbar: Day/Night toggle + Hotkey reference
+        val toggleBorderColor = if (darkCanvas) Color(0xFF3E3E58) else Color(0xFFCCCCCC)
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(HyveSpacing.sm)
-                .hoverable(toggleInteraction)
-                .background(color = toggleBg, shape = HyveShapes.card)
-                .border(
-                    width = 1.dp,
-                    color = if (darkCanvas) Color(0xFF3E3E58) else Color(0xFFCCCCCC),
-                    shape = HyveShapes.card
-                )
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Main)
-                            if (event.type == PointerEventType.Press) {
-                                state.toggleDarkCanvas()
-                                event.changes.forEach { it.consume() }
+                .padding(HyveSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(HyveSpacing.sm)
+        ) {
+            // Hotkey reference "?" button
+            if (onToggleHotkeyReference != null) {
+                val hotkeyInteraction = remember { MutableInteractionSource() }
+                val hotkeyHovered by hotkeyInteraction.collectIsHoveredAsState()
+                val hotkeyBg = when {
+                    darkCanvas && hotkeyHovered -> Color(0xFF363650)
+                    darkCanvas -> Color(0xFF2A2A3E)
+                    hotkeyHovered -> Color(0xFFE8E8E8)
+                    else -> Color.White.copy(alpha = 0.85f)
+                }
+                val hotkeyFg = if (darkCanvas) Color(0xFFCCCCDD) else Color(0xFF555555)
+                TooltipArea(
+                    tooltip = {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = if (darkCanvas) Color(0xFF2A2A3E) else Color(0xFFF5F5F5),
+                                    shape = HyveShapes.card
+                                )
+                                .border(1.dp, toggleBorderColor, HyveShapes.card)
+                                .padding(horizontal = HyveSpacing.sm, vertical = HyveSpacing.xs)
+                        ) {
+                            Text(
+                                text = "Keyboard shortcuts (Ctrl+/)",
+                                color = hotkeyFg,
+                                style = TextStyle(fontSize = 11.sp)
+                            )
+                        }
+                    },
+                    delayMillis = 400
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .hoverable(hotkeyInteraction)
+                            .background(color = hotkeyBg, shape = HyveShapes.card)
+                            .border(1.dp, toggleBorderColor, HyveShapes.card)
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Main)
+                                        if (event.type == PointerEventType.Press) {
+                                            onToggleHotkeyReference()
+                                            event.changes.forEach { it.consume() }
+                                        }
+                                    }
+                                }
                             }
+                            .padding(horizontal = HyveSpacing.sm, vertical = HyveSpacing.xs),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Match 14dp height of the Sun/Moon icon in the day/night toggle
+                        Box(
+                            modifier = Modifier.size(14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "?",
+                                color = hotkeyFg,
+                                style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            )
                         }
                     }
                 }
-                .padding(horizontal = HyveSpacing.sm, vertical = HyveSpacing.xs),
-            contentAlignment = Alignment.Center
-        ) {
-            // Sun/Moon icon drawn on a small canvas
-            Canvas(modifier = Modifier.size(14.dp)) {
-                if (darkCanvas) {
-                    // Moon: crescent shape
-                    drawCircle(color = toggleFg, radius = size.minDimension / 2.4f)
-                    drawCircle(
-                        color = toggleBg,
-                        radius = size.minDimension / 3f,
-                        center = Offset(size.width * 0.6f, size.height * 0.35f)
-                    )
-                } else {
-                    // Sun: circle with rays
-                    val center = Offset(size.width / 2, size.height / 2)
-                    val coreRadius = size.minDimension / 4f
-                    drawCircle(color = toggleFg, radius = coreRadius, center = center)
-                    val rayLength = size.minDimension / 2.4f
-                    for (i in 0 until 8) {
-                        val angle = Math.toRadians(i * 45.0)
-                        val cos = kotlin.math.cos(angle).toFloat()
-                        val sin = kotlin.math.sin(angle).toFloat()
-                        drawLine(
-                            color = toggleFg,
-                            start = Offset(center.x + cos * coreRadius * 1.4f, center.y + sin * coreRadius * 1.4f),
-                            end = Offset(center.x + cos * rayLength, center.y + sin * rayLength),
-                            strokeWidth = 1.2f
+            }
+
+            // Day/Night canvas mode toggle
+            val toggleInteraction = remember { MutableInteractionSource() }
+            val toggleHovered by toggleInteraction.collectIsHoveredAsState()
+            val toggleBg = when {
+                darkCanvas && toggleHovered -> Color(0xFF363650)
+                darkCanvas -> Color(0xFF2A2A3E)
+                toggleHovered -> Color(0xFFE8E8E8)
+                else -> Color.White.copy(alpha = 0.85f)
+            }
+            val toggleFg = if (darkCanvas) Color(0xFFCCCCDD) else Color(0xFF555555)
+            Box(
+                modifier = Modifier
+                    .hoverable(toggleInteraction)
+                    .background(color = toggleBg, shape = HyveShapes.card)
+                    .border(1.dp, toggleBorderColor, HyveShapes.card)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Main)
+                                if (event.type == PointerEventType.Press) {
+                                    state.toggleDarkCanvas()
+                                    event.changes.forEach { it.consume() }
+                                }
+                            }
+                        }
+                    }
+                    .padding(horizontal = HyveSpacing.sm, vertical = HyveSpacing.xs),
+                contentAlignment = Alignment.Center
+            ) {
+                // Sun/Moon icon drawn on a small canvas
+                Canvas(modifier = Modifier.size(14.dp)) {
+                    if (darkCanvas) {
+                        // Moon: crescent shape
+                        drawCircle(color = toggleFg, radius = size.minDimension / 2.4f)
+                        drawCircle(
+                            color = toggleBg,
+                            radius = size.minDimension / 3f,
+                            center = Offset(size.width * 0.6f, size.height * 0.35f)
                         )
+                    } else {
+                        // Sun: circle with rays
+                        val center = Offset(size.width / 2, size.height / 2)
+                        val coreRadius = size.minDimension / 4f
+                        drawCircle(color = toggleFg, radius = coreRadius, center = center)
+                        val rayLength = size.minDimension / 2.4f
+                        for (i in 0 until 8) {
+                            val angle = Math.toRadians(i * 45.0)
+                            val cos = kotlin.math.cos(angle).toFloat()
+                            val sin = kotlin.math.sin(angle).toFloat()
+                            drawLine(
+                                color = toggleFg,
+                                start = Offset(center.x + cos * coreRadius * 1.4f, center.y + sin * coreRadius * 1.4f),
+                                end = Offset(center.x + cos * rayLength, center.y + sin * rayLength),
+                                strokeWidth = 1.2f
+                            )
+                        }
                     }
                 }
             }

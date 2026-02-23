@@ -596,6 +596,105 @@ data class DeleteElementCommand(
 }
 
 /**
+ * Command to reorder an element within its parent's children list (z-order).
+ *
+ * @param parentId The ID of the parent element (null for root level)
+ * @param parentMatcher Predicate to find the parent if it has no ID
+ * @param elementId The ID of the element to move
+ * @param elementMatcher Predicate to find the element if it has no ID
+ * @param oldIndex The original index within the parent's children
+ * @param newIndex The target index within the parent's children
+ */
+data class ReorderElementCommand(
+    val parentId: ElementId?,
+    val parentMatcher: ((UIElement) -> Boolean)?,
+    val elementId: ElementId?,
+    val elementMatcher: ((UIElement) -> Boolean)?,
+    val oldIndex: Int,
+    val newIndex: Int,
+    private val elementDescription: String = "element"
+) : DocumentCommand {
+
+    override val description: String
+        get() = "Reorder $elementDescription"
+
+    override fun execute(state: UIElement): UIElement? {
+        return moveChild(state, oldIndex, newIndex)
+    }
+
+    override fun undo(state: UIElement): UIElement? {
+        return moveChild(state, newIndex, oldIndex)
+    }
+
+    private fun moveChild(root: UIElement, fromIndex: Int, toIndex: Int): UIElement? {
+        // If parent is root (null parent ID and matcher), operate on root directly
+        if (parentId == null && parentMatcher == null) {
+            return reorderChild(root, fromIndex, toIndex)
+        }
+
+        return root.mapDescendants { element ->
+            if (matchesParent(element)) {
+                reorderChild(element, fromIndex, toIndex) ?: element
+            } else {
+                element
+            }
+        }
+    }
+
+    private fun reorderChild(parent: UIElement, fromIndex: Int, toIndex: Int): UIElement? {
+        if (fromIndex < 0 || fromIndex >= parent.children.size) return null
+        if (toIndex < 0 || toIndex >= parent.children.size) return null
+        if (fromIndex == toIndex) return parent
+
+        val children = parent.children.toMutableList()
+        val child = children.removeAt(fromIndex)
+        children.add(toIndex, child)
+        return parent.copy(children = children)
+    }
+
+    private fun matchesParent(element: UIElement): Boolean {
+        if (parentId != null && element.id == parentId) return true
+        if (parentMatcher != null && parentMatcher.invoke(element)) return true
+        return false
+    }
+
+    companion object {
+        fun forElement(
+            parent: UIElement,
+            element: UIElement,
+            oldIndex: Int,
+            newIndex: Int
+        ): ReorderElementCommand {
+            return ReorderElementCommand(
+                parentId = parent.id,
+                parentMatcher = if (parent.id == null) { el -> el == parent } else null,
+                elementId = element.id,
+                elementMatcher = if (element.id == null) { el -> el == element } else null,
+                oldIndex = oldIndex,
+                newIndex = newIndex,
+                elementDescription = element.displayName()
+            )
+        }
+
+        fun forRootChild(
+            element: UIElement,
+            oldIndex: Int,
+            newIndex: Int
+        ): ReorderElementCommand {
+            return ReorderElementCommand(
+                parentId = null,
+                parentMatcher = null,
+                elementId = element.id,
+                elementMatcher = if (element.id == null) { el -> el == element } else null,
+                oldIndex = oldIndex,
+                newIndex = newIndex,
+                elementDescription = element.displayName()
+            )
+        }
+    }
+}
+
+/**
  * Command to replace an element with a modified version.
  * Used when the Composer modal applies bulk changes back to an element.
  *

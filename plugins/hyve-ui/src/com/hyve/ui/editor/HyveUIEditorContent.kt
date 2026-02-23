@@ -17,7 +17,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -41,6 +46,7 @@ import com.hyve.ui.composer.wordbank.rememberWordBankState
 import com.hyve.ui.components.hierarchy.HierarchyTree
 import com.hyve.ui.components.hierarchy.rememberHierarchyTreeState
 import com.hyve.ui.components.properties.SchemaPropertyInspector
+import com.hyve.ui.components.hotkeys.HotkeyReferencePanel
 import com.hyve.ui.components.toolbox.DragPreviewOverlay
 import com.hyve.ui.components.toolbox.DropHandler
 import com.hyve.ui.components.toolbox.ElementToolbox
@@ -513,6 +519,9 @@ private fun EditorMainContent(
     val editorFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { editorFocusRequester.requestFocus() }
 
+    // Hotkey reference panel state
+    var showHotkeyReference by remember { mutableStateOf(false) }
+
     // Sidebar and divider state
     val sidebarState = rememberSidebarState()
     val dividerState = rememberDraggableDividerState()
@@ -522,6 +531,22 @@ private fun EditorMainContent(
         .focusRequester(editorFocusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
+            // Handle Ctrl+/ for hotkey reference panel before other hotkeys
+            if (event.type == KeyEventType.KeyDown &&
+                event.key == Key.Slash &&
+                event.isCtrlPressed
+            ) {
+                showHotkeyReference = !showHotkeyReference
+                return@onPreviewKeyEvent true
+            }
+            // Dismiss hotkey panel on Escape
+            if (showHotkeyReference &&
+                event.type == KeyEventType.KeyDown &&
+                event.key == Key.Escape
+            ) {
+                showHotkeyReference = false
+                return@onPreviewKeyEvent true
+            }
             handleEditorKeyEvent(
                 event = event,
                 canvasState = canvasState,
@@ -601,6 +626,7 @@ private fun EditorMainContent(
                         itemRegistry = itemRegistry,
                         onOpenComposer = openComposerForElement,
                         composerOpen = composerElement != null,
+                        onToggleHotkeyReference = { showHotkeyReference = !showHotkeyReference },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -689,13 +715,17 @@ private fun EditorMainContent(
             val wordBankState = rememberWordBankState()
 
             // Discover importable .ui files from the same directory (spec 06 FR-4)
+            // Runs off-EDT to avoid freezing the UI on large directories.
             val importDiscoveryService = remember { ImportDiscoveryService() }
-            val importableFiles = remember(file) {
-                val parentDir = file.parent?.let { File(it.path) }
-                if (parentDir != null) {
-                    importDiscoveryService.discoverImports(parentDir, excludeFileName = file.name)
-                } else {
-                    emptyList()
+            var importableFiles by remember { mutableStateOf(emptyList<com.hyve.ui.composer.model.ImportableFile>()) }
+            LaunchedEffect(file) {
+                importableFiles = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val parentDir = file.parent?.let { File(it.path) }
+                    if (parentDir != null) {
+                        importDiscoveryService.discoverImports(parentDir, excludeFileName = file.name)
+                    } else {
+                        emptyList()
+                    }
                 }
             }
 
@@ -737,6 +767,13 @@ private fun EditorMainContent(
 
         // Drag preview overlay (rendered on top of everything)
         DragPreviewOverlay(toolboxState = toolboxState)
+
+        // Hotkey reference panel overlay
+        if (showHotkeyReference) {
+            HotkeyReferencePanel(
+                onDismiss = { showHotkeyReference = false }
+            )
+        }
     }
 }
 
