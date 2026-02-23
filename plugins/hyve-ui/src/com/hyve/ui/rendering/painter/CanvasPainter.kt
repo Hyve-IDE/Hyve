@@ -27,6 +27,8 @@ import com.hyve.ui.core.domain.styles.StyleReference
 import com.hyve.ui.rendering.layout.ElementBounds
 import com.hyve.ui.canvas.CanvasState
 import com.hyve.ui.canvas.ScreenshotMode
+import com.hyve.ui.canvas.SnapAxis
+import com.hyve.ui.canvas.SnapGuide
 import com.hyve.ui.components.validation.ValidationPanelState
 import com.hyve.ui.registry.ElementTypeRegistry
 import com.hyve.ui.registry.RenderStrategy
@@ -472,6 +474,12 @@ class CanvasPainter(
         // Canvas bounds indicator (outside workspace area)
         val CANVAS_BOUNDS_COLOR = Color(0x20000000) // Semi-transparent overlay for out-of-bounds
         val CANVAS_BOUNDS_COLOR_DARK = Color(0x30000000)
+
+        // Snap guide styling
+        val SNAP_GUIDE_COLOR = Color(0xCCFF00FF)         // Semi-transparent magenta (light canvas)
+        val SNAP_GUIDE_COLOR_DARK = Color(0xCCFF66FF)     // Semi-transparent lighter magenta (dark canvas)
+        const val SNAP_GUIDE_STROKE_WIDTH = 0.5f
+        const val SNAP_GUIDE_PADDING = 10f               // Extra padding on guide line ends
     }
 
     /**
@@ -531,6 +539,12 @@ class CanvasPainter(
 
         if (root != null) {
             drawElementTree(root, layout, state)
+        }
+
+        // Draw snap alignment guides on top of elements
+        val snapGuides = state.activeSnapGuides.value
+        if (snapGuides.isNotEmpty()) {
+            drawSnapGuides(state, snapGuides, darkCanvas)
         }
     }
 
@@ -850,6 +864,52 @@ class CanvasPainter(
 
     }
 
+
+    /**
+     * Draw snap alignment guide lines.
+     * Renders dashed magenta lines where dragged element edges/centers align with targets.
+     */
+    private fun DrawScope.drawSnapGuides(
+        state: CanvasState,
+        guides: List<SnapGuide>,
+        darkCanvas: Boolean = false
+    ) {
+        val zoom = state.zoom.value
+        val pan = state.panOffset.value
+        val color = if (darkCanvas) SNAP_GUIDE_COLOR_DARK else SNAP_GUIDE_COLOR
+        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 3f), 0f)
+
+        for (guide in guides) {
+            when (guide.axis) {
+                SnapAxis.VERTICAL -> {
+                    // Vertical line at guide.position (x), spanning from spanStart to spanEnd (y range)
+                    val screenX = guide.position * zoom + pan.x
+                    val screenStartY = guide.spanStart * zoom + pan.y - SNAP_GUIDE_PADDING
+                    val screenEndY = guide.spanEnd * zoom + pan.y + SNAP_GUIDE_PADDING
+                    drawLine(
+                        color = color,
+                        start = Offset(screenX, screenStartY),
+                        end = Offset(screenX, screenEndY),
+                        strokeWidth = SNAP_GUIDE_STROKE_WIDTH,
+                        pathEffect = dashEffect
+                    )
+                }
+                SnapAxis.HORIZONTAL -> {
+                    // Horizontal line at guide.position (y), spanning from spanStart to spanEnd (x range)
+                    val screenY = guide.position * zoom + pan.y
+                    val screenStartX = guide.spanStart * zoom + pan.x - SNAP_GUIDE_PADDING
+                    val screenEndX = guide.spanEnd * zoom + pan.x + SNAP_GUIDE_PADDING
+                    drawLine(
+                        color = color,
+                        start = Offset(screenStartX, screenY),
+                        end = Offset(screenEndX, screenY),
+                        strokeWidth = SNAP_GUIDE_STROKE_WIDTH,
+                        pathEffect = dashEffect
+                    )
+                }
+            }
+        }
+    }
 
     /**
      * Recursively draw element tree with viewport frustum culling.

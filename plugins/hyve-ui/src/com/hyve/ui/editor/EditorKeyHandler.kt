@@ -54,6 +54,11 @@ internal fun handleEditorKeyEvent(
             // Don't consume — Shift is also used as a modifier for other hotkeys
             return false
         }
+        Key.AltLeft, Key.AltRight -> {
+            canvasState.setAltPressed(event.type == KeyEventType.KeyDown)
+            // Don't consume — Alt is also a modifier for resize hotkeys
+            return false
+        }
     }
 
     // All remaining hotkeys only fire on KeyDown
@@ -73,6 +78,9 @@ internal fun handleEditorKeyEvent(
         }
         !composerOpen && Hotkeys.matchesWithFocusCheck(Hotkeys.toggleScreenshot, key, ctrl, shift, alt) -> {
             canvasState.toggleScreenshot(); true
+        }
+        !composerOpen && Hotkeys.matchesWithFocusCheck(Hotkeys.toggleSnapGuides, key, ctrl, shift, alt) -> {
+            canvasState.toggleSnapGuides(); true
         }
         Hotkeys.matches(Hotkeys.undo, key, ctrl, shift, alt) -> {
             canvasState.undo(); true

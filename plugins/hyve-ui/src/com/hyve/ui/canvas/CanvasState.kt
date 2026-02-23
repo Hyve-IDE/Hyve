@@ -334,6 +334,13 @@ class CanvasState(
         _shiftPressed.value = pressed
     }
 
+    private val _altPressed = mutableStateOf(false)
+    val altPressed: State<Boolean> = _altPressed
+
+    fun setAltPressed(pressed: Boolean) {
+        _altPressed.value = pressed
+    }
+
     // --- Grid ---
 
     private val _showGrid = mutableStateOf(true)
@@ -406,6 +413,66 @@ class CanvasState(
 
     fun setScreenshotMode(mode: ScreenshotMode) {
         _screenshotMode.value = mode
+    }
+
+    // --- Snap Guides ---
+
+    private val _snapGuidesEnabled = mutableStateOf(true)
+    val snapGuidesEnabled: State<Boolean> = _snapGuidesEnabled
+
+    private val _activeSnapGuides = mutableStateOf<List<SnapGuide>>(emptyList())
+    val activeSnapGuides: State<List<SnapGuide>> = _activeSnapGuides
+
+    /** Raw (un-snapped) drag offset — _dragOffset becomes the snapped value. */
+    private val _rawDragOffset = mutableStateOf(Offset.Zero)
+
+    /** Cached snap targets (computed once at drag start). */
+    private var _snapTargetBounds: List<Rect> = emptyList()
+
+    /**
+     * Toggle snap alignment guides on/off.
+     * Hotkey: S
+     */
+    fun toggleSnapGuides() {
+        _snapGuidesEnabled.value = !_snapGuidesEnabled.value
+        reportStatus(if (_snapGuidesEnabled.value) "Snap guides enabled" else "Snap guides disabled")
+    }
+
+    /**
+     * Walk the tree once to collect bounds of snap-eligible elements.
+     * Called at drag start to cache targets for the duration of the drag.
+     * Excludes: root, selected elements, descendants of selected, hidden, locked.
+     */
+    fun prepareSnapTargets() {
+        val root = _rootElement.value ?: return
+        val selectedSet = selection.selectedElements.value
+        val selectedIds = selectedSet.mapNotNull { it.id }.toSet()
+        val descendantIds = selectedSet.flatMap { collectDescendantIds(it) }.toSet()
+
+        val targets = mutableListOf<Rect>()
+        root.visitDescendants { element ->
+            val isRoot = element === root
+            val isSelected = element in selectedSet ||
+                    (element.id != null && element.id in selectedIds)
+            val isDescendant = element.id?.value in descendantIds
+            if (!isRoot && !isSelected && !isDescendant &&
+                element.metadata.visible && !element.metadata.locked) {
+                val bounds = _calculatedLayout.value[element]?.bounds
+                if (bounds != null) {
+                    targets.add(bounds)
+                }
+            }
+        }
+        _snapTargetBounds = targets
+    }
+
+    /**
+     * Clear all snap-related transient state.
+     */
+    private fun clearSnapState() {
+        _activeSnapGuides.value = emptyList()
+        _rawDragOffset.value = Offset.Zero
+        _snapTargetBounds = emptyList()
     }
 
     // --- Text Editing ---
@@ -673,6 +740,7 @@ class CanvasState(
         // Reset drag state
         _isDragging.value = false
         _dragOffset.value = Offset.Zero
+        clearSnapState()
     }
 
     /**
@@ -681,6 +749,7 @@ class CanvasState(
     fun cancelDrag() {
         _isDragging.value = false
         _dragOffset.value = Offset.Zero
+        clearSnapState()
     }
 
     /**
@@ -896,7 +965,27 @@ class CanvasState(
 
             // Update visual offset (no tree modifications) — O(1)
             _isDragging.value = true
-            _dragOffset.value = _dragOffset.value + delta
+            _rawDragOffset.value = _rawDragOffset.value + delta
+
+            // Apply snap (if enabled and Alt not pressed)
+            if (_snapGuidesEnabled.value && !_altPressed.value && _snapTargetBounds.isNotEmpty()) {
+                val selectedBounds = selection.selectedElements.value.mapNotNull {
+                    _calculatedLayout.value[it]?.bounds
+                }
+                val bbox = boundingBoxOf(selectedBounds)
+                if (bbox != null) {
+                    val movedBBox = bbox.offset(_rawDragOffset.value.x, _rawDragOffset.value.y)
+                    val result = calculateSnap(movedBBox, _snapTargetBounds)
+                    _activeSnapGuides.value = result.guides
+                    _dragOffset.value = _rawDragOffset.value + result.snapDelta
+                } else {
+                    _activeSnapGuides.value = emptyList()
+                    _dragOffset.value = _rawDragOffset.value
+                }
+            } else {
+                _activeSnapGuides.value = emptyList()
+                _dragOffset.value = _rawDragOffset.value
+            }
         }
     }
 

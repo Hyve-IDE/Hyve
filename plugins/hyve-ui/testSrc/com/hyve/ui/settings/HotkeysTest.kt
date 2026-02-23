@@ -141,6 +141,26 @@ class HotkeysTest {
         assertThat(Hotkeys.toggleGrid.hasModifier).isFalse()
     }
 
+    @Test
+    fun `toggleSnapGuides should be S without modifiers`() {
+        assertThat(Hotkeys.toggleSnapGuides.key).isEqualTo(Key.S)
+        assertThat(Hotkeys.toggleSnapGuides.hasModifier).isFalse()
+    }
+
+    @Test
+    fun `toggleSnapGuides should not conflict with save`() {
+        // Save is Ctrl+S, toggleSnapGuides is just S — no conflict
+        assertThat(Hotkeys.toggleSnapGuides.ctrl).isFalse()
+        assertThat(Hotkeys.save.ctrl).isTrue()
+        assertThat(Hotkeys.toggleSnapGuides.key).isEqualTo(Hotkeys.save.key)
+        // Same key but different modifiers — no conflict
+    }
+
+    @Test
+    fun `toggleSnapGuides display string should be S`() {
+        assertThat(Hotkeys.toggleSnapGuides.displayString()).isEqualTo("S")
+    }
+
     // --- HotkeyBinding display ---
 
     @Test
@@ -289,6 +309,13 @@ class HotkeysTest {
     }
 
     // --- getAllBindings completeness ---
+
+    @Test
+    fun `getAllBindings View category should include snap guides`() {
+        val bindings = Hotkeys.getAllBindings()
+        val viewBindings = bindings["View"]!!
+        assertThat(viewBindings).anyMatch { it.first == "Toggle Snap Guides" && it.second == Hotkeys.toggleSnapGuides }
+    }
 
     @Test
     fun `getAllBindings Element category should include nudge and z-order`() {

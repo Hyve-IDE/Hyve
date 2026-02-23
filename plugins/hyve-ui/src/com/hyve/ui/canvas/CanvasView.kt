@@ -437,6 +437,9 @@ fun CanvasView(
                                     }
                                 }
                                 accumulatedDrag = Offset.Zero
+                                if (currentDraggedElement != null) {
+                                    state.prepareSnapTargets()
+                                }
                             }
 
                             // Apply drag
@@ -484,9 +487,10 @@ fun CanvasView(
                         // After drag ends, commit changes and record undo
                         if (isDragging && !currentlyPanning && accumulatedDrag != Offset.Zero) {
                             if (currentDraggedElement != null) {
-                                // For move: commit the drag (applies offset to tree) then record undo
+                                // For move: use the snapped drag offset for undo (not raw cursor accumulation)
+                                val snappedTotal = state.dragOffset.value
                                 state.commitDrag()
-                                state.recordMoveUndo(accumulatedDrag)
+                                state.recordMoveUndo(snappedTotal)
                             } else {
                                 // For resize: commit the resize (applies to tree) then record undo
                                 val element = dragStartElement

@@ -92,6 +92,9 @@ object Hotkeys {
     /** Cycle screenshot mode (HUD / No HUD) */
     var cycleScreenshotMode = HotkeyBinding(Key.B, shift = true, description = "Cycle screenshot mode")
 
+    /** Toggle snap alignment guides */
+    var toggleSnapGuides = HotkeyBinding(Key.S, description = "Toggle snap guides")
+
     /** Reset zoom to 100% */
     var resetZoom = HotkeyBinding(Key.Zero, ctrl = true, description = "Reset zoom")
 
@@ -233,6 +236,7 @@ object Hotkeys {
         ),
         "View" to listOf(
             "Toggle Grid" to toggleGrid,
+            "Toggle Snap Guides" to toggleSnapGuides,
             "Toggle Screenshot" to toggleScreenshot,
             "Cycle Screenshot Mode" to cycleScreenshotMode,
             "Reset Zoom" to resetZoom,
