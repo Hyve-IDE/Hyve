@@ -1,6 +1,9 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.ui.composer.model
 
+import com.hyve.ui.registry.ElementCapability
+import com.hyve.ui.registry.ElementTypeRegistry
+
 /**
  * Severity level for a validation problem.
  */
@@ -20,11 +23,6 @@ data class Problem(
     val message: String,
     val property: String? = null,
 )
-
-/**
- * Interactive element types that require an ID for Java event binding (FR-3).
- */
-private val INTERACTIVE_TYPES = setOf("Button", "TextField", "CheckBox", "Slider", "DropdownBox")
 
 /**
  * Regex for valid hex color formats: #RGB, #RRGGBB, or #RRGGBBAA (FR-7).
@@ -61,7 +59,9 @@ fun validate(
     }
 
     // FR-3: Missing element ID for interactive types
-    if (element.type.value in INTERACTIVE_TYPES && element.id.isBlank()) {
+    val isInteractive = ElementCapability.INTERACTIVE in
+            ElementTypeRegistry.getOrDefault(element.type.value).capabilities
+    if (isInteractive && element.id.isBlank()) {
         problems += Problem(
             severity = ProblemSeverity.WARNING,
             message = "${element.type.value} has no #id \u2014 Java event binding requires an ID",

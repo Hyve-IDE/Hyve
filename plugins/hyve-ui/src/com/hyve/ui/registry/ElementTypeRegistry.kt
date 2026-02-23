@@ -39,7 +39,11 @@ enum class ElementCapability {
     /** Supports inline text editing via double-click */
     TEXT_EDITABLE,
     /** Can contain child elements */
-    CONTAINER
+    CONTAINER,
+    /** Interactive element that should have an ID for Java event binding */
+    INTERACTIVE,
+    /** Has a NumberField overlay (e.g. SliderNumberField, FloatSliderNumberField) */
+    HAS_NUMBER_FIELD
 }
 
 /**
@@ -208,7 +212,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Execute,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("Button")
@@ -223,7 +227,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Lightning,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("Button")
@@ -238,7 +242,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Back,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("Button")
@@ -253,7 +257,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowRight,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("Button")
@@ -268,7 +272,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Checked,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("Button")
@@ -285,7 +289,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Edit,
                 defaultSize = 200f to 32f,
                 renderStrategy = RenderStrategy.TEXT_FIELD,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("")
@@ -300,7 +304,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Edit,
                 defaultSize = 200f to 32f,
                 renderStrategy = RenderStrategy.TEXT_FIELD,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Text" to PropertyValue.Text("")
@@ -315,7 +319,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.FileTypes.Text,
                 defaultSize = 250f to 100f,
                 renderStrategy = RenderStrategy.MULTILINE_TEXT_FIELD,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = true
             ))
             add(ElementTypeInfo(
@@ -327,7 +331,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Debugger.Db_primitive,
                 defaultSize = 100f to 32f,
                 renderStrategy = RenderStrategy.NUMBER_FIELD,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true
             ))
 
@@ -341,7 +345,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowRight,
                 defaultSize = 200f to 24f,
                 renderStrategy = RenderStrategy.SLIDER,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Value" to PropertyValue.Number(0.5)
@@ -356,7 +360,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowRight,
                 defaultSize = 200f to 24f,
                 renderStrategy = RenderStrategy.SLIDER,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE, ElementCapability.HAS_NUMBER_FIELD),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Value" to PropertyValue.Number(0.5)
@@ -371,7 +375,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowRight,
                 defaultSize = 200f to 24f,
                 renderStrategy = RenderStrategy.SLIDER,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE, ElementCapability.HAS_NUMBER_FIELD),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Value" to PropertyValue.Number(0.5)
@@ -388,7 +392,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Checked,
                 defaultSize = 24f to 24f,
                 renderStrategy = RenderStrategy.CHECKBOX,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Checked" to PropertyValue.Boolean(false)
@@ -403,7 +407,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Checked,
                 defaultSize = 24f to 24f,
                 renderStrategy = RenderStrategy.CHECKBOX,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Checked" to PropertyValue.Boolean(false)
@@ -418,7 +422,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Checked,
                 defaultSize = 24f to 24f,
                 renderStrategy = RenderStrategy.CHECKBOX,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Checked" to PropertyValue.Boolean(false)
@@ -433,7 +437,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowDown,
                 defaultSize = 150f to 32f,
                 renderStrategy = RenderStrategy.DROPDOWN,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true
             ))
             add(ElementTypeInfo(
@@ -639,7 +643,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Colors,
                 defaultSize = 200f to 200f,
                 renderStrategy = RenderStrategy.GROUP,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true
             ))
             add(ElementTypeInfo(
@@ -651,7 +655,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Colors,
                 defaultSize = 150f to 32f,
                 renderStrategy = RenderStrategy.DROPDOWN,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true
             ))
 
@@ -665,7 +669,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.General.ArrowRight,
                 defaultSize = 200f to 24f,
                 renderStrategy = RenderStrategy.SLIDER,
-                capabilities = emptySet(),
+                capabilities = setOf(ElementCapability.INTERACTIVE),
                 isToolboxVisible = true,
                 defaultFallbackProperties = mapOf(
                     "Value" to PropertyValue.Number(0.5)
@@ -699,7 +703,7 @@ object ElementTypeRegistry {
                 toolboxIcon = AllIconsKeys.Actions.Execute,
                 defaultSize = 120f to 40f,
                 renderStrategy = RenderStrategy.BUTTON,
-                capabilities = setOf(ElementCapability.TEXT_EDITABLE),
+                capabilities = setOf(ElementCapability.TEXT_EDITABLE, ElementCapability.INTERACTIVE),
                 isToolboxVisible = false
             ))
             add(ElementTypeInfo(

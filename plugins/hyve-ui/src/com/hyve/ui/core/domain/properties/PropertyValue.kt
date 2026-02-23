@@ -39,10 +39,6 @@ sealed class PropertyValue {
      * Example: Width: 100%, Height: 50%
      */
     data class Percent(val ratio: Double) : PropertyValue() {
-        init {
-            require(ratio in 0.0..1.0) { "Percent ratio must be between 0.0 and 1.0 (got $ratio)" }
-        }
-
         /** Get the percentage as a whole number (0-100) */
         val percentage: Double get() = ratio * 100.0
 

@@ -47,6 +47,13 @@ class EditDeltaTracker {
             val oldId: ElementId,
             val newId: ElementId
         ) : EditDelta()
+
+        data class ReorderElement(
+            val parentId: ElementId?,
+            val elementId: ElementId,
+            val fromIndex: Int,
+            val toIndex: Int
+        ) : EditDelta()
     }
 
     private val deltas = mutableListOf<EditDelta>()
@@ -77,6 +84,7 @@ class EditDeltaTracker {
             when (delta) {
                 is EditDelta.AddElement -> delta.element.id == elementId
                 is EditDelta.DeleteElement -> delta.elementId == elementId
+                is EditDelta.ReorderElement -> delta.elementId == elementId
                 else -> false
             }
         }
@@ -130,6 +138,9 @@ class EditDeltaTracker {
                 is EditDelta.RenameElement -> {
                     currentRoot = applyRenameElement(currentRoot, delta)
                     renameMap[delta.oldId] = delta.newId
+                }
+                is EditDelta.ReorderElement -> {
+                    currentRoot = applyReorderElement(currentRoot, delta)
                 }
                 else -> {} // handled in phase 2
             }
@@ -226,6 +237,30 @@ class EditDeltaTracker {
         return root.mapDescendants { el ->
             if (el.id == delta.oldId) {
                 el.copy(id = delta.newId)
+            } else {
+                el
+            }
+        }
+    }
+
+    private fun applyReorderElement(root: UIElement, delta: EditDelta.ReorderElement): UIElement {
+        fun reorderChildren(parent: UIElement): UIElement {
+            val children = parent.children.toMutableList()
+            val fromIndex = delta.fromIndex
+            val toIndex = delta.toIndex
+            if (fromIndex !in children.indices || toIndex !in children.indices) return parent
+            val child = children.removeAt(fromIndex)
+            children.add(toIndex, child)
+            return parent.copy(children = children)
+        }
+
+        if (delta.parentId == null) {
+            return reorderChildren(root)
+        }
+
+        return root.mapDescendants { el ->
+            if (el.id == delta.parentId) {
+                reorderChildren(el)
             } else {
                 el
             }

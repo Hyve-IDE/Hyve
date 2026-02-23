@@ -38,6 +38,7 @@ import com.hyve.ui.settings.TextInputFocusState
 import com.hyve.ui.canvas.CanvasState
 import com.hyve.common.compose.HyveOpacity
 import com.hyve.common.compose.HyveSpacing
+import com.hyve.ui.state.EditDeltaTracker
 import com.hyve.ui.state.command.*
 import com.hyve.ui.rendering.layout.AnchorCalculator
 import com.hyve.ui.rendering.layout.Rect
@@ -403,16 +404,21 @@ private fun HierarchyTreeNode(
             // Root's children start at depth 0 (no extra indentation since root is always visible)
             val childDepth = if (isRoot) 0 else depth + 1
             element.children.forEachIndexed { childIndex, child ->
-                HierarchyTreeNode(
-                    element = child,
-                    depth = childDepth,
-                    index = childIndex,
-                    isRoot = false,  // Only the actual root element is marked as root
-                    canvasState = canvasState,
-                    treeState = treeState,
-                    selectedElements = selectedElements,
-                    onOpenComposer = onOpenComposer
-                )
+                // Key by ID (or index for ID-less elements) so Compose tracks
+                // each child's identity across recompositions — prevents flickering
+                // when elements are duplicated or reordered.
+                key(child.id?.value ?: "idx_$childIndex") {
+                    HierarchyTreeNode(
+                        element = child,
+                        depth = childDepth,
+                        index = childIndex,
+                        isRoot = false,  // Only the actual root element is marked as root
+                        canvasState = canvasState,
+                        treeState = treeState,
+                        selectedElements = selectedElements,
+                        onOpenComposer = onOpenComposer
+                    )
+                }
             }
         }
     }
@@ -481,50 +487,26 @@ private fun renameElement(element: UIElement, newName: String, canvasState: Canv
 
 /**
  * Toggle element visibility in metadata.
+ * Uses [CanvasState.updateElementMetadata] which handles tree update,
+ * selection sync, and sidecar persistence. Metadata is editor-only state
+ * (not exported to .ui files) so undo is intentionally skipped.
  */
 private fun toggleElementVisibility(element: UIElement, canvasState: CanvasState) {
-    val root = canvasState.rootElement.value ?: return
     val newVisible = !element.metadata.visible
-    val newMetadata = element.metadata.copy(visible = newVisible)
-    val newElement = element.copy(metadata = newMetadata)
-
-    // Update the tree
-    val newRoot = root.mapDescendants { el ->
-        if (el.id == element.id && element.id != null) {
-            newElement
-        } else if (el == element) {
-            newElement
-        } else {
-            el
-        }
-    }
-
-    canvasState.setRootElement(newRoot)
+    canvasState.updateElementMetadata(element) { it.copy(visible = newVisible) }
     val name = element.id?.value ?: element.type.value
     canvasState.reportStatus(if (newVisible) "Show $name" else "Hide $name")
 }
 
 /**
  * Toggle element lock state in metadata.
+ * Uses [CanvasState.updateElementMetadata] which handles tree update,
+ * selection sync, and sidecar persistence. Metadata is editor-only state
+ * (not exported to .ui files) so undo is intentionally skipped.
  */
 private fun toggleElementLock(element: UIElement, canvasState: CanvasState) {
-    val root = canvasState.rootElement.value ?: return
     val newLocked = !element.metadata.locked
-    val newMetadata = element.metadata.copy(locked = newLocked)
-    val newElement = element.copy(metadata = newMetadata)
-
-    // Update the tree
-    val newRoot = root.mapDescendants { el ->
-        if (el.id == element.id && element.id != null) {
-            newElement
-        } else if (el == element) {
-            newElement
-        } else {
-            el
-        }
-    }
-
-    canvasState.setRootElement(newRoot)
+    canvasState.updateElementMetadata(element) { it.copy(locked = newLocked) }
     val name = element.id?.value ?: element.type.value
     canvasState.reportStatus(if (newLocked) "Lock $name" else "Unlock $name")
 }
@@ -540,13 +522,21 @@ private fun deleteElement(element: UIElement, canvasState: CanvasState) {
         return
     }
 
-    // Find the current version of this element in the tree (by ID)
-    // This is important because the element reference may be stale from context menu caching
+    // Find the current version of this element in the tree.
+    // For elements with IDs, look up by ID. For ID-less elements,
+    // find by structural equality (the reference may be stale from
+    // context menu caching or a search-filter copy).
     val elementId = element.id
     val currentElement = if (elementId != null) {
         root.findDescendantById(elementId) ?: element
     } else {
-        element
+        var found: UIElement? = null
+        root.visitDescendants { el ->
+            if (found == null && el == element) {
+                found = el
+            }
+        }
+        found ?: element
     }
 
     // Find parent and index using the current element
@@ -560,7 +550,13 @@ private fun deleteElement(element: UIElement, canvasState: CanvasState) {
         DeleteElementCommand.forElement(currentElement, parent, childIndex)
     }
 
-    canvasState.executeCommand(command, allowMerge = false)
+    if (canvasState.executeCommand(command, allowMerge = false)) {
+        currentElement.id?.let { id ->
+            canvasState.recordDelta(EditDeltaTracker.EditDelta.DeleteElement(
+                elementId = id
+            ))
+        }
+    }
     canvasState.clearSelection()
 }
 
@@ -574,11 +570,14 @@ private fun duplicateElement(element: UIElement, canvasState: CanvasState) {
     val parentInfo = findParentOfElement(root, element) ?: return
     val (parent, childIndex) = parentInfo
 
-    // Create a copy with a new ID
-    val newId = element.id?.let {
-        ElementId("${it.value}_copy")
+    // Deep-clone with _copy suffix on all descendant IDs
+    val duplicatedElement = element.mapDescendants { el ->
+        if (el.id != null) {
+            el.copy(id = ElementId("${el.id.value}_copy"))
+        } else {
+            el
+        }
     }
-    val duplicatedElement = element.copy(id = newId)
 
     // Create command to add the duplicate
     val command = if (parent == root) {
@@ -587,11 +586,19 @@ private fun duplicateElement(element: UIElement, canvasState: CanvasState) {
         AddElementCommand.toParent(parent, duplicatedElement, childIndex + 1)
     }
 
-    canvasState.executeCommand(command, allowMerge = false)
+    if (canvasState.executeCommand(command, allowMerge = false)) {
+        // Record structural delta so the export pipeline persists the duplicate
+        canvasState.recordDelta(EditDeltaTracker.EditDelta.AddElement(
+            parentId = if (parent == root) null else parent.id,
+            index = childIndex + 1,
+            element = duplicatedElement
+        ))
+    }
 }
 
 /**
  * Wrap an element in a Group container.
+ * Executed as a composite command (delete + add) so it's undoable.
  */
 private fun wrapInGroup(element: UIElement, canvasState: CanvasState) {
     val root = canvasState.rootElement.value ?: return
@@ -613,20 +620,36 @@ private fun wrapInGroup(element: UIElement, canvasState: CanvasState) {
         ))
     )
 
-    // Replace the element with the group
-    val newRoot = root.mapDescendants { el ->
-        if (el == parent || (el.id == parent.id && parent.id != null)) {
-            val newChildren = el.children.toMutableList()
-            if (childIndex in newChildren.indices) {
-                newChildren[childIndex] = group
-            }
-            el.copy(children = newChildren)
-        } else {
-            el
-        }
+    // Build undoable command: delete original element, then add group at same position
+    val deleteCommand = if (parent == root) {
+        DeleteElementCommand.fromRoot(element, root, childIndex)
+    } else {
+        DeleteElementCommand.forElement(element, parent, childIndex)
     }
 
-    canvasState.setRootElement(newRoot)
+    val addCommand = if (parent == root) {
+        AddElementCommand.toRoot(group, childIndex)
+    } else {
+        AddElementCommand.toParent(parent, group, childIndex)
+    }
+
+    val command = CompositeCommand(
+        listOf(deleteCommand, addCommand),
+        "Wrap ${element.displayName()} in Group"
+    )
+
+    if (canvasState.executeCommand(command, allowMerge = false)) {
+        element.id?.let { elementId ->
+            canvasState.recordDelta(EditDeltaTracker.EditDelta.DeleteElement(
+                elementId = elementId
+            ))
+        }
+        canvasState.recordDelta(EditDeltaTracker.EditDelta.AddElement(
+            parentId = if (parent == root) null else parent.id,
+            index = childIndex,
+            element = group
+        ))
+    }
 }
 
 /**
@@ -751,7 +774,18 @@ private fun moveElement(
         "Move ${element.displayName()}"
     )
 
-    canvasState.executeCommand(compositeCommand, allowMerge = false)
+    if (canvasState.executeCommand(compositeCommand, allowMerge = false)) {
+        element.id?.let { elementId ->
+            canvasState.recordDelta(EditDeltaTracker.EditDelta.DeleteElement(
+                elementId = elementId
+            ))
+            canvasState.recordDelta(EditDeltaTracker.EditDelta.AddElement(
+                parentId = if (newParent == root) null else newParent.id,
+                index = adjustedIndex,
+                element = elementToMove
+            ))
+        }
+    }
 }
 
 /**

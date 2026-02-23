@@ -1445,35 +1445,37 @@ fun ListPropertyEditor(
             } else {
                 // Display existing items
                 value.values.forEachIndexed { index, propValue ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            PropertyEditor(
-                                propertyName = PropertyName("[$index]"),
-                                value = propValue,
-                                onValueChange = { newValue ->
-                                    val newValues = value.values.toMutableList()
-                                    newValues[index] = newValue
-                                    onValueChange(PropertyValue.List(newValues))
-                                }
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                val newValues = value.values.toMutableList()
-                                newValues.removeAt(index)
-                                onValueChange(PropertyValue.List(newValues))
-                            },
-                            modifier = Modifier.size(24.dp)
+                    key(index) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top
                         ) {
-                            Icon(
-                                key = AllIconsKeys.Actions.Close,
-                                contentDescription = "Remove item $index",
-                                modifier = Modifier.size(14.dp),
-                                tint = JewelTheme.globalColors.text.error.copy(alpha = 0.7f)
-                            )
+                            Box(modifier = Modifier.weight(1f)) {
+                                PropertyEditor(
+                                    propertyName = PropertyName("[$index]"),
+                                    value = propValue,
+                                    onValueChange = { newValue ->
+                                        val newValues = value.values.toMutableList()
+                                        newValues[index] = newValue
+                                        onValueChange(PropertyValue.List(newValues))
+                                    }
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    val newValues = value.values.toMutableList()
+                                    newValues.removeAt(index)
+                                    onValueChange(PropertyValue.List(newValues))
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    key = AllIconsKeys.Actions.Close,
+                                    contentDescription = "Remove item $index",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = JewelTheme.globalColors.text.error.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
                 }

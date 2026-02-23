@@ -5,6 +5,8 @@ import com.hyve.ui.core.domain.properties.PropertyValue
 import com.hyve.ui.core.id.ElementId
 import com.hyve.ui.core.id.ElementType
 import com.hyve.ui.core.id.PropertyName
+import com.hyve.ui.registry.ElementCapability
+import com.hyve.ui.registry.ElementTypeRegistry
 
 /**
  * Core domain model for UI elements.
@@ -110,13 +112,10 @@ data class UIElement(
     }
 
     /**
-     * Check if element can have children (based on type)
-     * TODO: Move to SchemaRegistry when implemented
+     * Check if element can have children (based on type registry).
      */
     fun canHaveChildren(): Boolean {
-        // For now, simple heuristic - containers can have children
-        val containerTypes = setOf("Group", "ScrollView", "TabPanel", "Panel")
-        return type.value in containerTypes
+        return ElementCapability.CONTAINER in ElementTypeRegistry.getOrDefault(type.value).capabilities
     }
 
     /**

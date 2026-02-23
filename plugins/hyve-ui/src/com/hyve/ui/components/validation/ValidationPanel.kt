@@ -10,6 +10,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -665,7 +666,7 @@ private fun VariableStatusList(state: ValidationPanelState) {
         contentPadding = PaddingValues(HyveSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(HyveSpacing.xs)
     ) {
-        items(variables) { variable ->
+        items(variables, key = { it.name }) { variable ->
             VariableStatusRow(variable)
         }
     }
@@ -790,7 +791,7 @@ private fun ImportStatusList(state: ValidationPanelState) {
         contentPadding = PaddingValues(HyveSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(HyveSpacing.xs)
     ) {
-        items(imports) { import ->
+        items(imports, key = { it.alias }) { import ->
             ImportStatusRow(import)
         }
     }
@@ -929,7 +930,7 @@ private fun WarningsList(state: ValidationPanelState) {
         contentPadding = PaddingValues(HyveSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(HyveSpacing.xs)
     ) {
-        items(warnings) { warning ->
+        itemsIndexed(warnings, key = { index, _ -> index }) { _, warning ->
             WarningRow(warning)
         }
     }

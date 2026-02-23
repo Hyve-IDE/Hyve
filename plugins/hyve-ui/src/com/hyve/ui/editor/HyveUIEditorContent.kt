@@ -55,6 +55,7 @@ import com.hyve.ui.components.validation.ValidationPanelState
 import com.hyve.ui.components.validation.rememberValidationPanelState
 import com.hyve.ui.core.domain.UIDocument
 import com.hyve.ui.core.domain.elements.UIElement
+import com.hyve.ui.core.domain.elements.assignAutoIds
 import com.hyve.ui.exporter.UIExporter
 import com.hyve.ui.core.domain.properties.PropertyValue
 import com.hyve.ui.parser.UIParser
@@ -325,7 +326,12 @@ private fun EditorMainContent(
                     return@LaunchedEffect
                 }
                 is com.hyve.ui.core.result.Result.Success -> {
-                    rawDocument = rawResult.value
+                    // Assign auto-IDs to ID-less elements so the delta system
+                    // can track structural changes (move, delete, reparent).
+                    // Auto-IDs are stripped during export to keep .ui files clean.
+                    rawDocument = rawResult.value.let { doc ->
+                        doc.copy(root = doc.root.assignAutoIds())
+                    }
                 }
             }
 
@@ -353,7 +359,11 @@ private fun EditorMainContent(
                 null
             }
 
-            val document = resolvedDoc ?: rawDocument!!
+            // Assign auto-IDs to resolved document (same depth-first scheme as raw)
+            // so deltas recorded against the visual tree match the raw document.
+            val document = (resolvedDoc ?: rawDocument!!).let { doc ->
+                doc.copy(root = doc.root.assignAutoIds())
+            }
             currentDocument = document
             canvasState.setRootElement(document.root)
             canvasState.setSourceFilePath(File(file.path))

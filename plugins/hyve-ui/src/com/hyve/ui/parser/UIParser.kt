@@ -417,6 +417,19 @@ class UIParser(
                         localStyles[style.name] = style
                         // Store as a local style property for export
                         properties[PropertyName("@${style.name.value}")] = styleToPropertyValue(style)
+
+                        // Element-based scoped styles may have children — store them
+                        // as a synthetic wrapper so the exporter can reconstruct them.
+                        if (style.children.isNotEmpty()) {
+                            children.add(UIElement(
+                                type = ElementType("_ScopedStyleChildren"),
+                                id = null,
+                                properties = PropertyMap.of(
+                                    PropertyName("_forStyle") to PropertyValue.Text("@${style.name.value}")
+                                ),
+                                children = style.children
+                            ))
+                        }
                     }
                 }
 
@@ -452,7 +465,8 @@ class UIParser(
                     consume(TokenType.COLON, "Expected ':' after property name")
 
                     val value = parsePropertyValue(propertyName.value)
-                    properties[propertyName] = value
+                    // Upgrade quoted strings to ImagePath/FontPath for known property names
+                    properties[propertyName] = upgradePropertyValue(propertyName.value, value)
 
                     consume(TokenType.SEMICOLON, "Expected ';' after property")
                 }
@@ -578,22 +592,24 @@ class UIParser(
 
         // Parse style body - can be tuple, type constructor, element-based, or simple value
         var elementChildren: List<UIElement> = emptyList()
+        var typeConstructorName: String? = null
+        var elementTypeName: String? = null
 
-        val (properties, elementType) = when {
-            check(TokenType.LEFT_PAREN) && isTupleAhead() -> parseInlineStyle() to null
+        val properties = when {
+            check(TokenType.LEFT_PAREN) && isTupleAhead() -> parseInlineStyle()
             // Type constructor: TypeName(...)
             check(TokenType.IDENTIFIER) && peekNext()?.type == TokenType.LEFT_PAREN -> {
-                val typeName = advance().lexeme
-                parseTypeConstructorArgs() to typeName
+                typeConstructorName = advance().lexeme
+                parseTypeConstructorArgs()
             }
             // Element-based style: TypeName { ... }
             check(TokenType.IDENTIFIER) && peekNext()?.type == TokenType.LEFT_BRACE -> {
-                val typeName = advance().lexeme
+                elementTypeName = advance().lexeme
                 consume(TokenType.LEFT_BRACE, "Expected '{' after type name")
                 val (bodyProps, bodyChildren) = parseElementBody()
                 consume(TokenType.RIGHT_BRACE, "Expected '}' after style element body")
                 elementChildren = bodyChildren
-                bodyProps to typeName
+                bodyProps
             }
             // Simple values like @Label = ""; or @Min = 0; or expressions
             check(TokenType.STRING) || check(TokenType.NUMBER) || check(TokenType.COLOR) ||
@@ -601,11 +617,11 @@ class UIParser(
             check(TokenType.MINUS) || check(TokenType.IDENTIFIER) || check(TokenType.AT) ||
             check(TokenType.DOLLAR) || check(TokenType.LEFT_PAREN) -> {
                 val value = parsePropertyValue()
-                mapOf(PropertyName("_value") to value) to null
+                mapOf(PropertyName("_value") to value)
             }
             else -> {
                 error("Expected '(' or value after '='")
-                emptyMap<PropertyName, PropertyValue>() to null
+                emptyMap()
             }
         }
 
@@ -614,7 +630,8 @@ class UIParser(
         return StyleDefinition(
             name = styleName,
             properties = properties,
-            elementType = elementType,
+            typeName = typeConstructorName,
+            elementType = elementTypeName,
             children = elementChildren
         )
     }
@@ -704,12 +721,26 @@ class UIParser(
     }
 
     /**
-     * Convert a StyleDefinition to a PropertyValue for storage in element properties
+     * Convert a StyleDefinition to a PropertyValue for storage in element properties.
+     * Preserves typeName and elementType as metadata keys for round-trip fidelity.
      */
     private fun styleToPropertyValue(style: StyleDefinition): PropertyValue {
-        return PropertyValue.Tuple(
-            style.properties.map { (k, v) -> k.value to v }.toMap()
-        )
+        val map = LinkedHashMap<String, PropertyValue>()
+
+        // Preserve type constructor name for round-trip export
+        if (style.typeName != null) {
+            map["_typeName"] = PropertyValue.Text(style.typeName, quoted = false)
+        }
+
+        // Preserve element type for round-trip export
+        if (style.elementType != null) {
+            map["_elementType"] = PropertyValue.Text(style.elementType, quoted = false)
+        }
+
+        // Add all style properties
+        style.properties.forEach { (k, v) -> map[k.value] = v }
+
+        return PropertyValue.Tuple(map)
     }
 
     /**
@@ -968,18 +999,22 @@ class UIParser(
                 parseVariableReference()
             }
 
-            // Identifier (enum value or type constructor call)
+            // Identifier (enum value, null literal, or type constructor call)
             check(TokenType.IDENTIFIER) -> {
                 val token = advance()
 
-                // Check if this is a type constructor call: Identifier(...)
-                if (check(TokenType.LEFT_PAREN)) {
-                    // This looks like: TypeName(prop: value, ...) - could be inline style
-                    val args = parseTypeConstructorArgs()
-                    PropertyValue.Tuple(args.map { (k, v) -> k.value to v }.toMap())
-                } else {
+                when {
+                    // Null literal
+                    token.lexeme == "null" -> PropertyValue.Null
+
+                    // Type constructor call: Identifier(...)
+                    check(TokenType.LEFT_PAREN) -> {
+                        val args = parseTypeConstructorArgs()
+                        PropertyValue.Tuple(args.map { (k, v) -> k.value to v }.toMap())
+                    }
+
                     // Plain identifier (enum value) — unquoted
-                    PropertyValue.Text(token.lexeme, quoted = false)
+                    else -> PropertyValue.Text(token.lexeme, quoted = false)
                 }
             }
 
@@ -1083,6 +1118,30 @@ class UIParser(
     private val NON_ANCHOR_PROPERTIES = setOf(
         "Padding", "Margin", "Border", "Inset", "Offset"
     )
+
+    /** Property names whose string values should be upgraded to ImagePath. */
+    private val IMAGE_PATH_PROPERTIES = setOf(
+        "Source", "BackgroundImage", "Icon", "Image",
+        "TexturePath", "MaskTexturePath", "BarTexturePath",
+        "TabBackground", "SlotBackground"
+    )
+
+    /** Property names whose string values should be upgraded to FontPath. */
+    private val FONT_PATH_PROPERTIES = setOf("Font", "FontName")
+
+    /**
+     * Upgrade a parsed property value to a semantic type based on the property name.
+     * Only upgrades quoted Text values — unquoted identifiers, expressions, etc. are left as-is.
+     * Applied only to top-level element properties to avoid over-upgrading inside styles/tuples.
+     */
+    private fun upgradePropertyValue(propertyName: String, value: PropertyValue): PropertyValue {
+        if (value !is PropertyValue.Text || !value.quoted) return value
+        return when (propertyName) {
+            in IMAGE_PATH_PROPERTIES -> PropertyValue.ImagePath(value.value)
+            in FONT_PATH_PROPERTIES -> PropertyValue.FontPath(value.value)
+            else -> value
+        }
+    }
 
     private fun parseTuple(propertyName: String? = null): PropertyValue {
         consume(TokenType.LEFT_PAREN, "Expected '('")

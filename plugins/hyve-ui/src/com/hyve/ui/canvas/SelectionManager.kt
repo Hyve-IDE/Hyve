@@ -87,9 +87,13 @@ class SelectionManager {
                     newSelection.add(found)
                 }
             } else {
-                // No ID — check if still in tree by reference
+                // No ID — check if still in tree by structural equality.
+                // We can't use reference equality (===) here because tree
+                // mutations via mapDescendants create new object instances,
+                // which would cause ID-less elements to be silently dropped
+                // from the selection after any edit operation.
                 root.visitDescendants { el ->
-                    if (el === selected) {
+                    if (el == selected) {
                         newSelection.add(el)
                     }
                 }

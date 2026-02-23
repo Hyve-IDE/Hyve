@@ -195,6 +195,15 @@ class CanvasState(
         _editDeltaTracker = tracker
     }
 
+    /**
+     * Record an edit delta for the export pipeline.
+     * Used by external callers (e.g. hierarchy tree operations) that execute
+     * commands but need to record structural deltas themselves.
+     */
+    fun recordDelta(delta: EditDeltaTracker.EditDelta) {
+        _editDeltaTracker?.record(delta)
+    }
+
     // --- Runtime Schema Registry (for schema-driven element defaults) ---
 
     private var _runtimeRegistry: RuntimeSchemaRegistry? = null
@@ -957,7 +966,23 @@ class CanvasState(
                 CompositeCommand(commands, "Move ${commands.size} elements")
             }
 
-            executeCommand(command, allowMerge)
+            if (executeCommand(command, allowMerge)) {
+                // Record deltas for export so keyboard moves persist to file
+                for (element in currentSelectedElements) {
+                    val anchorProp = element.getProperty("Anchor")
+                    if (anchorProp !is PropertyValue.Anchor) continue
+                    val currentAnchor = anchorProp.anchor
+                    val parent = findParent(element)
+                    val pBounds = if (parent != null) getBounds(parent)?.bounds else null
+                    val newAnchor = calculateMovedAnchor(currentAnchor, delta, pBounds)
+                    element.id?.let { elementId ->
+                        _editDeltaTracker?.record(EditDeltaTracker.EditDelta.MoveElement(
+                            elementId = elementId,
+                            newAnchor = PropertyValue.Anchor(newAnchor)
+                        ))
+                    }
+                }
+            }
         } else {
             // During drag: check if ALL selected elements are locked
             val allLocked = selection.selectedElements.value.all { it.metadata.locked }
@@ -1866,7 +1891,19 @@ class CanvasState(
             ReorderElementCommand.forElement(parent, element, currentIndex, newIndex)
         }
 
-        return executeCommand(command, allowMerge = false)
+        val success = executeCommand(command, allowMerge = false)
+        if (success) {
+            element.id?.let { elementId ->
+                val parentId = if (parent === root || (parent.id != null && parent.id == root.id)) null else parent.id
+                _editDeltaTracker?.record(EditDeltaTracker.EditDelta.ReorderElement(
+                    parentId = parentId,
+                    elementId = elementId,
+                    fromIndex = currentIndex,
+                    toIndex = newIndex
+                ))
+            }
+        }
+        return success
     }
 
     // --- Sibling Selection Cycling ---

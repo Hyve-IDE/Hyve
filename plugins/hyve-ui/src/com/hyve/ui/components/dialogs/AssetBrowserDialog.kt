@@ -419,12 +419,14 @@ private fun DirectoryItem(
         // Children
         if (isExpanded && hasChildren) {
             node.children.forEach { child ->
-                DirectoryItem(
-                    node = child,
-                    selectedPath = selectedPath,
-                    onSelected = onSelected,
-                    depth = depth + 1
-                )
+                key(child.path) {
+                    DirectoryItem(
+                        node = child,
+                        selectedPath = selectedPath,
+                        onSelected = onSelected,
+                        depth = depth + 1
+                    )
+                }
             }
         }
     }

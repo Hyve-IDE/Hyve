@@ -30,6 +30,7 @@ import com.hyve.ui.canvas.ScreenshotMode
 import com.hyve.ui.canvas.SnapAxis
 import com.hyve.ui.canvas.SnapGuide
 import com.hyve.ui.components.validation.ValidationPanelState
+import com.hyve.ui.registry.ElementCapability
 import com.hyve.ui.registry.ElementTypeRegistry
 import com.hyve.ui.registry.RenderStrategy
 import com.hyve.ui.services.assets.AssetLoader
@@ -2183,7 +2184,9 @@ class CanvasPainter(
         }
 
         // NumberField overlay for SliderNumberField / FloatSliderNumberField
-        if (element.type.value.contains("NumberField")) {
+        val hasNumberField = ElementCapability.HAS_NUMBER_FIELD in
+                ElementTypeRegistry.getOrDefault(element.type.value).capabilities
+        if (hasNumberField) {
             val nfStyle = resolveStyleToTuple(element.getProperty("NumberFieldStyle"))
             val nfAnchor = element.getProperty("NumberFieldContainerAnchor") as? PropertyValue.Anchor
             val nfTextColor = nfStyle?.get("TextColor")?.let { colorFromValue(it, DEFAULT_TEXT) } ?: DEFAULT_TEXT

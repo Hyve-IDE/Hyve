@@ -724,18 +724,20 @@ private fun SchemaPropertyDisplay(
 
         val isExpanded = expandedCategories[category] ?: true
 
-        QuickEditCategorySection(
-            category = category,
-            properties = properties,
-            element = element,
-            existingPropertyNames = existingPropertyNames,
-            isExpanded = isExpanded,
-            onToggleExpanded = { expandedCategories[category] = !isExpanded },
-            canvasState = canvasState,
-            tupleFieldLookup = tupleFieldLookup
-        )
+        key(category.name) {
+            QuickEditCategorySection(
+                category = category,
+                properties = properties,
+                element = element,
+                existingPropertyNames = existingPropertyNames,
+                isExpanded = isExpanded,
+                onToggleExpanded = { expandedCategories[category] = !isExpanded },
+                canvasState = canvasState,
+                tupleFieldLookup = tupleFieldLookup
+            )
 
-        Spacer(modifier = Modifier.height(HyveSpacing.sm))
+            Spacer(modifier = Modifier.height(HyveSpacing.sm))
+        }
     }
 }
 
@@ -809,26 +811,30 @@ private fun QuickEditCategorySection(
             for (propSchema in setProperties) {
                 val value = element.getProperty(propSchema.name)
                 if (value != null) {
-                    QuickEditPropertyItem(
-                        propSchema = propSchema,
-                        value = value,
-                        element = element,
-                        canvasState = canvasState,
-                        anchorOverride = if (propSchema.name == "Anchor") {
-                            canvasState.dragPreviewAnchor.value
-                        } else null,
-                        knownTupleFields = tupleFieldLookup[propSchema.name] ?: emptyList()
-                    )
+                    key(propSchema.name) {
+                        QuickEditPropertyItem(
+                            propSchema = propSchema,
+                            value = value,
+                            element = element,
+                            canvasState = canvasState,
+                            anchorOverride = if (propSchema.name == "Anchor") {
+                                canvasState.dragPreviewAnchor.value
+                            } else null,
+                            knownTupleFields = tupleFieldLookup[propSchema.name] ?: emptyList()
+                        )
+                    }
                 }
             }
 
             // Show unset properties that can be added
             for (propSchema in unsetProperties) {
-                QuickEditUnsetPropertyItem(
-                    propSchema = propSchema,
-                    element = element,
-                    canvasState = canvasState
-                )
+                key("unset_${propSchema.name}") {
+                    QuickEditUnsetPropertyItem(
+                        propSchema = propSchema,
+                        element = element,
+                        canvasState = canvasState
+                    )
+                }
             }
         }
     }
