@@ -66,6 +66,7 @@ import com.hyve.ui.schema.RuntimeSchemaRegistry
 import com.hyve.ui.services.assets.AssetLoader
 import com.hyve.ui.services.items.ItemRegistry
 import com.hyve.common.compose.HyveSpacing
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.jewel.ui.Orientation
@@ -505,6 +506,34 @@ private fun EditorMainContent(
             val meta = buildSidecarMetadata()
             if (meta != null) {
                 EditorMetadataIO.save(File(file.path), meta, project.basePath)
+            }
+        }
+    }
+
+    // Autosave document content after edits (debounced).
+    // Mirrors the sidecar debounce pattern above but with a longer delay
+    // since this involves VFS I/O and DocumentListener sync.
+    @OptIn(FlowPreview::class)
+    LaunchedEffect(Unit) {
+        snapshotFlow { canvasState.treeVersion.value }
+            .debounce(1500L)
+            .collect { version ->
+                if (version > 0L) {
+                    onSave()
+                }
+            }
+    }
+
+    // Save document immediately on disposal (tab close, editor switch)
+    // so pending debounced changes aren't lost.
+    DisposableEffect(Unit) {
+        onDispose {
+            val app = ApplicationManager.getApplication()
+            val save = Runnable { onSave() }
+            if (app.isDispatchThread) {
+                save.run()
+            } else {
+                app.invokeAndWait(save)
             }
         }
     }
