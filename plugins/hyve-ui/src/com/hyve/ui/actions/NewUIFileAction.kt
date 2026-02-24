@@ -47,21 +47,24 @@ class NewUIFileAction : HyveProjectAction(
         // Ensure .ui extension
         val fullFileName = if (fileName.endsWith(".ui")) fileName else "$fileName.ui"
 
-        // Create the file
-        runWriteAction {
+        // Create the file in a write action, then open it outside the write
+        // action so editor initialization can commit PSI in a write-safe context.
+        val created = runWriteAction {
             try {
                 val file = directory.createChildData(this, fullFileName)
                 file.setBinaryContent(DEFAULT_UI_TEMPLATE.toByteArray())
-
-                // Open in editor
-                FileEditorManager.getInstance(project).openFile(file, true)
+                file
             } catch (ex: Exception) {
                 Messages.showErrorDialog(
                     project,
                     "Failed to create file: ${ex.message}",
                     "Error Creating UI File"
                 )
+                null
             }
+        }
+        if (created != null) {
+            FileEditorManager.getInstance(project).openFile(created, true)
         }
     }
 

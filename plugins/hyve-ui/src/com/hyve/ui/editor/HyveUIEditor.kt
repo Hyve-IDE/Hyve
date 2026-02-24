@@ -117,26 +117,34 @@ class HyveUIEditor(
 
     /**
      * Save the document to disk.
+     *
+     * Uses [invokeLater] to ensure the write happens in a write-safe modality
+     * context. Compose's FlushCoroutineDispatcher runs on the EDT but in
+     * NON_MODAL state, which TransactionGuard rejects for write actions that
+     * trigger document reloads.
      */
     fun saveDocument() {
         val content = editorState.content.value ?: return
 
-        try {
-            ApplicationManager.getApplication().runWriteAction {
-                virtualFile.setBinaryContent(content.toByteArray(Charsets.UTF_8))
+        ApplicationManager.getApplication().invokeLater {
+            if (!virtualFile.isValid) return@invokeLater
+            try {
+                ApplicationManager.getApplication().runWriteAction {
+                    virtualFile.setBinaryContent(content.toByteArray(Charsets.UTF_8))
+                }
+                editorState.markSaved()
+                propertyChangeSupport.firePropertyChange(PROP_MODIFIED, true, false)
+            } catch (e: Exception) {
+                com.intellij.notification.Notifications.Bus.notify(
+                    com.intellij.notification.Notification(
+                        "Hyve UI Editor",
+                        "Save Failed",
+                        "Failed to save ${virtualFile.name}: ${e.message}",
+                        com.intellij.notification.NotificationType.ERROR
+                    ),
+                    project
+                )
             }
-            editorState.markSaved()
-            propertyChangeSupport.firePropertyChange(PROP_MODIFIED, true, false)
-        } catch (e: Exception) {
-            com.intellij.notification.Notifications.Bus.notify(
-                com.intellij.notification.Notification(
-                    "Hyve UI Editor",
-                    "Save Failed",
-                    "Failed to save ${virtualFile.name}: ${e.message}",
-                    com.intellij.notification.NotificationType.ERROR
-                ),
-                project
-            )
         }
     }
 

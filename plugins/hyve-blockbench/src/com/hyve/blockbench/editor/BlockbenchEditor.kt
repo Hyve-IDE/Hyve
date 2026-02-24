@@ -15,6 +15,7 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.util.messages.MessageBusConnection
+import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import javax.swing.*
@@ -24,48 +25,70 @@ class BlockbenchEditor(
     private val file: VirtualFile,
 ) : UserDataHolderBase(), FileEditor {
 
-    private val browser: JBCefBrowser?
-    private val bridge: BlockbenchBridge?
+    private var browser: JBCefBrowser? = null
+    private var bridge: BlockbenchBridge? = null
     private var modified = false
     private val pcs = PropertyChangeSupport(this)
-    private val component: JComponent
-    private val busConnection: MessageBusConnection?
+    private var busConnection: MessageBusConnection? = null
+
+    // Wrapper panel that hosts either the JCEF browser or the fallback UI.
+    // JCEF browser creation is deferred via invokeLater to avoid triggering
+    // JBCefApp$Holder.<clinit> during constructor execution, which would
+    // violate the platform rule that class init must not depend on services.
+    private val wrapper = JPanel(BorderLayout())
 
     init {
-        if (BlockbenchBundle.isAvailable() && JBCefApp.isSupported()) {
-            browser = JBCefBrowserBuilder()
-                .setOffScreenRendering(false)
-                .build()
-            // Set initial 60fps default; the bridge will sync to Blockbench's FPS Limit setting once loaded.
-            // CefBrowserWr (remote mode) requires a post-creation call to push the rate to the remote CEF process.
-            browser.cefBrowser.setWindowlessFrameRate(60)
-            // Serve via local HTTP to avoid CORS issues with file:// and ES modules
-            val port = BlockbenchServer.ensureRunning()
-            val baseUrl = "http://127.0.0.1:$port"
-            bridge = BlockbenchBridge(browser, file, project, baseUrl) { mod ->
-                val old = modified
-                modified = mod
-                pcs.firePropertyChange("modified", old, mod)
-            }
-            browser.loadURL("$baseUrl/index.html")
-            component = browser.component
-
-            // IntelliJ intercepts Ctrl+S before it reaches JCEF, so listen for IDE-level
-            // save events and forward them to the Blockbench bridge.
-            busConnection = ApplicationManager.getApplication().messageBus.connect()
-            busConnection.subscribe(FileDocumentManagerListener.TOPIC, object : FileDocumentManagerListener {
-                override fun beforeAllDocumentsSaving() {
-                    if (modified) {
-                        bridge.save()
-                    }
+        // Defer everything to invokeLater — even JBCefApp.isSupported() triggers
+        // JBCefApp$Holder.<clinit> which performs service lookups that the platform
+        // forbids during class/constructor initialization.
+        ApplicationManager.getApplication().invokeLater {
+            if (!file.isValid) return@invokeLater
+            if (BlockbenchBundle.isAvailable() && JBCefApp.isSupported()) {
+                try {
+                    initBrowser()
+                } catch (e: Exception) {
+                    wrapper.add(createFallbackPanel(), BorderLayout.CENTER)
+                    wrapper.revalidate()
                 }
-            })
-        } else {
-            browser = null
-            bridge = null
-            busConnection = null
-            component = createFallbackPanel()
+            } else {
+                wrapper.add(createFallbackPanel(), BorderLayout.CENTER)
+                wrapper.revalidate()
+            }
         }
+    }
+
+    private fun initBrowser() {
+        val jcefBrowser = JBCefBrowserBuilder()
+            .setOffScreenRendering(false)
+            .build()
+        browser = jcefBrowser
+        // Set initial 60fps default; the bridge will sync to Blockbench's FPS Limit setting once loaded.
+        // CefBrowserWr (remote mode) requires a post-creation call to push the rate to the remote CEF process.
+        jcefBrowser.cefBrowser.setWindowlessFrameRate(60)
+        // Serve via local HTTP to avoid CORS issues with file:// and ES modules
+        val port = BlockbenchServer.ensureRunning()
+        val baseUrl = "http://127.0.0.1:$port"
+        bridge = BlockbenchBridge(jcefBrowser, file, project, baseUrl) { mod ->
+            val old = modified
+            modified = mod
+            pcs.firePropertyChange("modified", old, mod)
+        }
+        jcefBrowser.loadURL("$baseUrl/index.html")
+        wrapper.add(jcefBrowser.component, BorderLayout.CENTER)
+        wrapper.revalidate()
+        wrapper.repaint()
+
+        // IntelliJ intercepts Ctrl+S before it reaches JCEF, so listen for IDE-level
+        // save events and forward them to the Blockbench bridge.
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        busConnection = conn
+        conn.subscribe(FileDocumentManagerListener.TOPIC, object : FileDocumentManagerListener {
+            override fun beforeAllDocumentsSaving() {
+                if (modified) {
+                    bridge?.save()
+                }
+            }
+        })
     }
 
     private fun createFallbackPanel(): JPanel {
@@ -104,9 +127,9 @@ class BlockbenchEditor(
         return panel
     }
 
-    override fun getComponent(): JComponent = component
+    override fun getComponent(): JComponent = wrapper
 
-    override fun getPreferredFocusedComponent(): JComponent? = component
+    override fun getPreferredFocusedComponent(): JComponent? = browser?.component ?: wrapper
 
     override fun getName(): String = "Blockbench"
 

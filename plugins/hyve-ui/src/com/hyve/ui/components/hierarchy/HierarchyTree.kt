@@ -31,6 +31,7 @@ import com.hyve.ui.core.domain.elements.UIElement
 import com.hyve.ui.core.domain.elements.ElementMetadata
 import com.hyve.ui.core.domain.properties.PropertyMap
 import com.hyve.ui.core.domain.properties.PropertyValue
+import com.hyve.ui.core.domain.anchor.AnchorDimension
 import com.hyve.ui.core.domain.anchor.AnchorValue
 import com.hyve.ui.core.id.ElementId
 import com.hyve.ui.core.id.ElementType
@@ -715,10 +716,9 @@ private fun moveElement(
 
     // If reparenting, compute new anchor to preserve visual position
     val elementToMove = if (isReparenting) {
-        // Get current bounds of the element
-        val elementBounds = canvasState.getBounds(element)
-        // Get bounds of the new parent
-        val newParentBounds = canvasState.getBounds(newParent)
+        // Get base bounds (no drag/resize offset) with ID-based fallback for stale references
+        val elementBounds = canvasState.getBaseBounds(element)
+        val newParentBounds = canvasState.getBaseBounds(newParent)
 
         if (elementBounds != null && newParentBounds != null) {
             // Convert ElementBounds to Rect for the calculator
@@ -741,8 +741,17 @@ private fun moveElement(
             // Update the element with the new anchor
             element.setProperty("Anchor", PropertyValue.Anchor(newAnchor))
         } else {
-            // Fallback: use original element if we can't get bounds
-            element
+            // Bounds unavailable (stale reference) — place at new parent's origin with preserved size
+            val existingAnchor = (element.getProperty("Anchor") as? PropertyValue.Anchor)?.anchor
+            val width = (existingAnchor?.width as? AnchorDimension.Absolute)?.pixels ?: 100f
+            val height = (existingAnchor?.height as? AnchorDimension.Absolute)?.pixels ?: 50f
+            val fallbackAnchor = AnchorValue(
+                left = AnchorDimension.Absolute(0f),
+                top = AnchorDimension.Absolute(0f),
+                width = AnchorDimension.Absolute(width),
+                height = AnchorDimension.Absolute(height)
+            )
+            element.setProperty("Anchor", PropertyValue.Anchor(fallbackAnchor))
         }
     } else {
         // Just reordering within same parent - keep anchor as is

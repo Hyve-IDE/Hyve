@@ -14,5 +14,9 @@
         id="Hyve Blockbench"
         displayType="BALLOON"
         isLogByDefault="true"/>
+
+    <!-- Pre-warm JCEF so its one-time static-init warning lands at startup,
+         not when a user opens a Blockbench file. -->
+    <postStartupActivity implementation="com.hyve.blockbench.startup.JcefPrewarmActivity"/>
   </extensions>
 </idea-plugin>

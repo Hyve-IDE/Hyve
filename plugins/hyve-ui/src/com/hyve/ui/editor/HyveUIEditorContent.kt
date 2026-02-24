@@ -492,6 +492,7 @@ private fun EditorMainContent(
         }
             .debounce(500L)
             .collect {
+                if (!file.isValid) return@collect
                 val meta = buildSidecarMetadata() ?: return@collect
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     EditorMetadataIO.save(File(file.path), meta, project.basePath)
@@ -503,6 +504,7 @@ private fun EditorMainContent(
     // so pending debounced changes aren't lost
     DisposableEffect(canvasState) {
         onDispose {
+            if (!file.isValid) return@onDispose
             val meta = buildSidecarMetadata()
             if (meta != null) {
                 EditorMetadataIO.save(File(file.path), meta, project.basePath)
@@ -526,16 +528,9 @@ private fun EditorMainContent(
 
     // Save document immediately on disposal (tab close, editor switch)
     // so pending debounced changes aren't lost.
+    // saveDocument() handles its own invokeLater scheduling for write-safe context.
     DisposableEffect(Unit) {
-        onDispose {
-            val app = ApplicationManager.getApplication()
-            val save = Runnable { onSave() }
-            if (app.isDispatchThread) {
-                save.run()
-            } else {
-                app.invokeAndWait(save)
-            }
-        }
+        onDispose { onSave() }
     }
 
     // Composer modal state — set to non-null to open the composer for an element

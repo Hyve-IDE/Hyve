@@ -1414,6 +1414,22 @@ class CanvasState(
         return baseBounds
     }
 
+    /**
+     * Get base layout bounds for an element without drag/resize offsets.
+     * Falls back to ID-based lookup when identity lookup fails (stale references).
+     * Use this for anchor recalculation during reparenting.
+     */
+    fun getBaseBounds(element: UIElement): ElementBounds? {
+        // Fast path: identity-based lookup
+        _calculatedLayout.value[element]?.let { return it }
+
+        // Fallback: search by element ID (handles stale references from recomposition)
+        val targetId = element.id ?: return null
+        return _calculatedLayout.value.entries.firstOrNull { (_, bounds) ->
+            bounds.elementId == targetId
+        }?.value
+    }
+
     // calculateResizedBounds → see AnchorMath.kt (top-level function)
 
     // --- Coordinate Transformations ---
