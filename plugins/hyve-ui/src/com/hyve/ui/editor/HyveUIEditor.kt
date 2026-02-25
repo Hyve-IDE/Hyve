@@ -48,9 +48,14 @@ class HyveUIEditor(
     override fun EditorContent() {
         val deps = remember {
             createDefaultEditorDependencies(
-                projectResourcesPath = project.basePath?.let { Path.of(it) }
-                    ?.resolve("resources")
-                    ?.takeIf { it.toFile().exists() }
+                projectResourcesPath = project.basePath?.let { base ->
+                    val root = Path.of(base)
+                    // Standard Gradle/Maven mod layout first, then project root fallback
+                    sequenceOf(
+                        root.resolve("src/main/resources"),
+                        root.resolve("resources")
+                    ).firstOrNull { it.toFile().exists() }
+                }
             )
         }
         CompositionLocalProvider(LocalEditorDependencies provides deps) {
