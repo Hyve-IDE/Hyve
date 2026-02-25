@@ -66,6 +66,12 @@ class HyveUIEditor(
 
     /**
      * Load the document content from the file.
+     *
+     * When the file is empty (e.g. created manually via New File → "name.ui"
+     * instead of the Ctrl+Shift+U action), initializes it with a default
+     * template so the editor has a proper Group #Root element to work with.
+     * Without this, the parser creates a synthetic Root wrapper that the
+     * exporter strips on save, causing the root element to vanish.
      */
     private fun loadDocument() {
         editorState.setLoading(true)
@@ -74,8 +80,19 @@ class HyveUIEditor(
             try {
                 val content = VirtualFileBridge.readContentSync(virtualFile)
 
-                ApplicationManager.getApplication().invokeLater {
-                    editorState.setContent(content)
+                if (content.isBlank()) {
+                    // Empty file — seed with default template and persist it
+                    val template = DEFAULT_UI_TEMPLATE
+                    ApplicationManager.getApplication().invokeLater {
+                        ApplicationManager.getApplication().runWriteAction {
+                            virtualFile.setBinaryContent(template.toByteArray(Charsets.UTF_8))
+                        }
+                        editorState.setContent(template)
+                    }
+                } else {
+                    ApplicationManager.getApplication().invokeLater {
+                        editorState.setContent(content)
+                    }
                 }
             } catch (e: Exception) {
                 ApplicationManager.getApplication().invokeLater {
@@ -176,5 +193,14 @@ class HyveUIEditor(
 
     companion object {
         private const val PROP_MODIFIED = "modified"
+
+        /**
+         * Default template for empty .ui files, matching NewUIFileAction.
+         */
+        private val DEFAULT_UI_TEMPLATE = """
+            Group #Root {
+                Anchor: (Left: 0, Top: 0, Width: 100%, Height: 100%);
+            }
+        """.trimIndent()
     }
 }

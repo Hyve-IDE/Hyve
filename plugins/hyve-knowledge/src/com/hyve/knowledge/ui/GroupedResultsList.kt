@@ -1,6 +1,8 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.knowledge.ui
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.hyve.common.compose.*
 import com.hyve.common.compose.components.SectionHeader
 import com.hyve.knowledge.core.search.SearchResult
+import com.hyve.knowledge.docs.OfflineDocResolver
 import org.jetbrains.jewel.ui.component.Text
 
 /**
@@ -29,6 +32,7 @@ import org.jetbrains.jewel.ui.component.Text
 fun GroupedResultsList(
     results: List<SearchResult>,
     onResultClick: (SearchResult) -> Unit,
+    onOpenFullDocument: ((SearchResult) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val grouped = results.groupBy { it.corpus }
@@ -69,11 +73,13 @@ fun GroupedResultsList(
             if (isExpanded) {
                 // Direct results — shown immediately
                 items(directResults, key = { "result:${it.nodeId}" }) { result ->
-                    SearchResultCard(
-                        result = result,
-                        onClick = { onResultClick(result) },
-                        modifier = Modifier.padding(start = 6.dp),
-                    )
+                    DocsContextMenuWrapper(result, onOpenFullDocument) {
+                        SearchResultCard(
+                            result = result,
+                            onClick = { onResultClick(result) },
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
                 }
 
                 // Expanded results — collapsed sub-section
@@ -97,16 +103,48 @@ fun GroupedResultsList(
 
                     if (isExpansionOpen) {
                         items(expandedResults, key = { "expanded:${it.nodeId}" }) { result ->
-                            SearchResultCard(
-                                result = result,
-                                onClick = { onResultClick(result) },
-                                modifier = Modifier.padding(start = 12.dp),
-                            )
+                            DocsContextMenuWrapper(result, onOpenFullDocument) {
+                                SearchResultCard(
+                                    result = result,
+                                    onClick = { onResultClick(result) },
+                                    modifier = Modifier.padding(start = 12.dp),
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Wraps a search result card in a right-click context menu for DOCS corpus results.
+ * Shows "Open Full Document" if the offline file exists, or "(not synced)" if not.
+ * Non-docs results pass through unwrapped.
+ */
+@Composable
+private fun DocsContextMenuWrapper(
+    result: SearchResult,
+    onOpenFullDocument: ((SearchResult) -> Unit)?,
+    content: @Composable () -> Unit,
+) {
+    if (result.corpus == "docs" && onOpenFullDocument != null) {
+        val relPath = result.nodeId.removePrefix("docs:")
+        val offlineFile = OfflineDocResolver.resolve(relPath)
+        ContextMenuArea(
+            items = {
+                if (offlineFile != null) {
+                    listOf(ContextMenuItem("Open Full Document") { onOpenFullDocument(result) })
+                } else {
+                    listOf(ContextMenuItem("Open Full Document (not synced)") { })
+                }
+            },
+        ) {
+            content()
+        }
+    } else {
+        content()
     }
 }
 

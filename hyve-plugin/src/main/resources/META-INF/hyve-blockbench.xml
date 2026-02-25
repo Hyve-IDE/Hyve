@@ -19,4 +19,24 @@
          not when a user opens a Blockbench file. -->
     <postStartupActivity implementation="com.hyve.blockbench.startup.JcefPrewarmActivity"/>
   </extensions>
+  <actions>
+    <!-- New Blockbench files — appears in right-click > New > Hytale -->
+    <action
+        id="HyveBlockbench.NewModel"
+        class="com.hyve.blockbench.actions.NewBlockbenchModelAction"
+        text="Blockbench Model"
+        description="Create a new Blockbench model file (.blockymodel)"
+        icon="AllIcons.FileTypes.Json">
+      <add-to-group group-id="HytaleNewGroup"/>
+    </action>
+
+    <action
+        id="HyveBlockbench.NewAnimation"
+        class="com.hyve.blockbench.actions.NewBlockbenchAnimAction"
+        text="Blockbench Animation"
+        description="Create a new Blockbench animation file (.blockyanim)"
+        icon="AllIcons.FileTypes.Json">
+      <add-to-group group-id="HytaleNewGroup"/>
+    </action>
+  </actions>
 </idea-plugin>

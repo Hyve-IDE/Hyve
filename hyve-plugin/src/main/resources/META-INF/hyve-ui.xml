@@ -35,24 +35,15 @@
   </extensions>
 
   <actions>
-    <group id="HyveUIMenu" text="Hyve UI" popup="true">
-      <add-to-group group-id="MainMenu" anchor="before" relative-to-action="HelpMenu"/>
-
-      <action
-          id="HyveUI.NewUIFile"
-          class="com.hyve.ui.actions.NewUIFileAction"
-          text="New UI File"
-          description="Create a new Hytale UI file"
-          icon="AllIcons.FileTypes.Xml">
-        <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift U"/>
-      </action>
-
-      <action
-          id="HyveUI.OpenInTextEditor"
-          class="com.hyve.ui.actions.OpenInTextEditorAction"
-          text="Open in Text Editor"
-          description="Open current .ui file in text editor"/>
-    </group>
+    <!-- New UI File — appears in right-click > New > Hytale -->
+    <action
+        id="HyveUI.NewUIFile"
+        class="com.hyve.ui.actions.NewUIFileAction"
+        text="UI File"
+        description="Create a new Hytale UI file (.ui)"
+        icon="AllIcons.FileTypes.Xml">
+      <add-to-group group-id="HytaleNewGroup"/>
+    </action>
 
     <action
         id="HyveUI.OpenInVisualEditor"

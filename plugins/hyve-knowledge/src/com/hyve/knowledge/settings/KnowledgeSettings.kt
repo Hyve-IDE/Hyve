@@ -35,6 +35,7 @@ class KnowledgeSettings : PersistentStateComponent<KnowledgeSettings.State> {
         var decompileOutputPath: String = ""  // empty = default
         var indexPath: String = ""            // empty = default
         var autoIndexOnStart: Boolean = false
+        var syncOfflineDocsOnStart: Boolean = true
         // Search
         var resultsPerCorpus: Int = 10
         var maxRelatedConnections: Int = 5
@@ -73,6 +74,16 @@ class KnowledgeSettings : PersistentStateComponent<KnowledgeSettings.State> {
         val configured = myState.indexPath
         if (configured.isNotBlank()) return java.io.File(configured)
         return defaultBasePath().toFile()
+    }
+
+    /** Resolved base path for offline docs cache. */
+    fun resolvedOfflineDocsPath(): java.io.File {
+        return defaultBasePath().resolve("docs-offline").toFile()
+    }
+
+    /** Resolved path for a specific locale's offline docs. */
+    fun resolvedOfflineDocsPath(locale: String): java.io.File {
+        return resolvedOfflineDocsPath().resolve(locale)
     }
 
     private fun defaultBasePath(): java.nio.file.Path {

@@ -21,10 +21,27 @@
     <applicationService
         serviceImplementation="com.hyve.knowledge.settings.KnowledgeSettings"/>
 
+    <applicationService
+        serviceImplementation="com.hyve.knowledge.docs.DocsSyncService"/>
+
     <toolWindow id="Hytale Knowledge" anchor="right" icon="AllIcons.Toolwindows.ToolWindowFind"
         factoryClass="com.hyve.knowledge.ui.KnowledgeToolWindowFactory"/>
 
+    <toolWindow id="Hytale Documentation" anchor="right" icon="AllIcons.Toolwindows.Documentation"
+        factoryClass="com.hyve.knowledge.docs.ui.DocsToolWindowFactory"/>
+
+    <postStartupActivity
+        implementation="com.hyve.knowledge.docs.DocsSyncStartupActivity"/>
+
+    <editorNotificationProvider
+        implementation="com.hyve.knowledge.docs.ui.DocsEditorNotificationProvider"/>
+
     <notificationGroup id="Hyve Knowledge" displayType="BALLOON" isLogByDefault="true"/>
+
+  </extensions>
+
+  <extensions defaultExtensionNs="org.jetbrains">
+    <urlOpener implementation="com.hyve.knowledge.docs.DocsLinkNavigationHandler"/>
   </extensions>
 
   <actions>
@@ -74,6 +91,12 @@
         class="com.hyve.knowledge.actions.ConfigureMcpAction"
         text="Configure Hytale Knowledge MCP..."
         description="Configure standalone MCP server for external LLM clients">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="HyveSyncOfflineDocs"
+        class="com.hyve.knowledge.docs.SyncDocsAction"
+        text="Sync Offline Documentation..."
+        description="Download latest HytaleModding documentation for offline browsing">
       <add-to-group group-id="ToolsMenu" anchor="last"/>
     </action>
   </actions>

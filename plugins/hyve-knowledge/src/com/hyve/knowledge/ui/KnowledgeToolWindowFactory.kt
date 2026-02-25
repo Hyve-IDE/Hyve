@@ -37,6 +37,8 @@ class KnowledgeToolWindowFactory : SimpleHyveToolWindowFactory() {
             addSeparator()
             add(ActionManager.getInstance().getAction("HyveBuildAllIndices"))
             addSeparator()
+            add(ActionManager.getInstance().getAction("HyveSyncOfflineDocs"))
+            addSeparator()
             // Settings
             add(object : DumbAwareAction("Hyve Knowledge Settings\u2026") {
                 override fun actionPerformed(e: AnActionEvent) {

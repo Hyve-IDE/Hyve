@@ -1,11 +1,13 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.knowledge.settings
 
+import com.hyve.knowledge.docs.ui.LOCALE_DISPLAY_NAMES
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.*
 import javax.swing.JComponent
 import javax.swing.JPasswordField
@@ -47,9 +49,13 @@ private class GeneralConfigurable : BoundConfigurable("General") {
 
         group("Documentation") {
             row("Language:") {
-                comboBox(DOCS_LANGUAGES)
+                comboBox(
+                    LOCALE_DISPLAY_NAMES.keys.toList(),
+                    SimpleListCellRenderer.create { label, value, _ ->
+                        label.text = value?.let { LOCALE_DISPLAY_NAMES[it] } ?: ""
+                    }
+                )
                     .bindItem(state::docsLanguage.toNullableProperty())
-                    .comment("Language for modding docs (e.g. en, de-DE, fr-FR)")
             }
             row("GitHub Repo:") {
                 textField()
@@ -87,16 +93,13 @@ private class GeneralConfigurable : BoundConfigurable("General") {
             checkBox("Auto-rebuild index on IDE startup")
                 .bindSelected(state::autoIndexOnStart)
         }
+        row {
+            checkBox("Sync offline documentation on startup")
+                .bindSelected(state::syncOfflineDocsOnStart)
+                .comment("Download docs from GitHub for offline browsing in the Hytale Documentation panel")
+        }
     }
 
-    companion object {
-        private val DOCS_LANGUAGES = listOf(
-            "en", "de-DE", "fr-FR", "es-ES", "it-IT", "pt-PT", "nl-NL",
-            "pl-PL", "sv-SE", "da-DK", "cs-CZ", "hu-HU", "ro-RO",
-            "ru-RU", "uk-UA", "tr-TR", "sq-AL", "af-ZA", "lt-LT", "lv-LV",
-            "ja-JP", "ar-SA", "hi-IN", "id-ID", "vi-VN", "pt-BR",
-        )
-    }
 }
 
 /**

@@ -37,7 +37,10 @@ import kotlinx.coroutines.withContext
 import com.intellij.openapi.application.ApplicationManager
 import java.io.File
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.hyve.common.settings.HytaleInstallPath
@@ -264,10 +267,36 @@ fun KnowledgeSearchPanel(project: Project) {
                         else -> {
                             GroupedResultsList(
                                 results = results,
+                                onOpenFullDocument = { result ->
+                                    try { backgroundFocus.requestFocus() } catch (_: Exception) { }
+                                    val relPath = result.nodeId.removePrefix("docs:")
+                                    val offlineFile = com.hyve.knowledge.docs.OfflineDocResolver.resolve(relPath)
+                                    if (offlineFile != null) {
+                                        openFileAtLine(project, offlineFile.absolutePath, 0, "docs")
+                                    }
+                                },
                                 onResultClick = { result ->
                                     // Move focus to background target before opening a file
                                     // to avoid WInputMethod NPE during Compose→Swing transition
                                     try { backgroundFocus.requestFocus() } catch (_: Exception) { }
+                                    // For DOCS corpus, try to open the offline doc instead
+                                    if (result.corpus == "docs") {
+                                        val relPath = result.nodeId.removePrefix("docs:")
+                                        val offlineFile = com.hyve.knowledge.docs.OfflineDocResolver.resolve(relPath)
+                                        if (offlineFile != null) {
+                                            openFileAtLine(project, offlineFile.absolutePath, 0, "docs")
+                                            return@GroupedResultsList
+                                        }
+                                        // Offline file not available — show sync hint
+                                        NotificationGroupManager.getInstance()
+                                            .getNotificationGroup("Hyve Knowledge")
+                                            .createNotification(
+                                                "Sync documentation for full doc viewing",
+                                                "Use Tools > Sync Offline Documentation to enable full document preview.",
+                                                NotificationType.INFORMATION
+                                            )
+                                            .notify(project)
+                                    }
                                     openFileAtLine(project, result.filePath, result.lineStart, result.corpus)
                                 },
                             )
@@ -321,7 +350,17 @@ private fun openFileAtLine(project: Project, filePath: String, line: Int, corpus
         } ?: return@executeOnPooledThread
 
         ApplicationManager.getApplication().invokeLater {
-            val editor = FileEditorManager.getInstance(project).openFile(vf, true).firstOrNull()
+            val editors = FileEditorManager.getInstance(project).openFile(vf, true)
+            // For offline docs, show preview-only (no raw markdown source)
+            if (corpus == "docs") {
+                for (editor in editors) {
+                    if (editor is TextEditorWithPreview) {
+                        editor.setLayout(TextEditorWithPreview.Layout.SHOW_PREVIEW)
+                        break
+                    }
+                }
+            }
+            val editor = editors.firstOrNull()
             if (editor is com.intellij.openapi.fileEditor.TextEditor && line > 0) {
                 val logicalPosition = com.intellij.openapi.editor.LogicalPosition(line - 1, 0)
                 editor.editor.caretModel.moveToLogicalPosition(logicalPosition)

@@ -64,6 +64,14 @@
     <bundledColorScheme id="Hyve Dark" path="/themes/hyve/hyve_darkScheme"/>
   </extensions>
 
+  <!-- ── Hytale "New" submenu in File > New / right-click > New ── -->
+  <actions>
+    <group id="HytaleNewGroup" text="Hytale" popup="true"
+           icon="AllIcons.Nodes.Module">
+      <add-to-group group-id="NewGroup" anchor="last"/>
+    </group>
+  </actions>
+
   <!-- ── Sub-plugin descriptors ── -->
   <xi:include href="/META-INF/hyve-ui.xml"/>
   <xi:include href="/META-INF/hyve-prefab.xml"/>
