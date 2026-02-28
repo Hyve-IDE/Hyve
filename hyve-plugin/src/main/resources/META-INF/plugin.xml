@@ -17,7 +17,7 @@
     </ul>
   ]]></description>
 
-  <idea-version since-build="253" until-build="253.*"/>
+  <idea-version since-build="253"/>
 
   <change-notes><![CDATA[
     <b>1.0.0</b> — Initial marketplace release combining Hyve Common, UI Editor,
