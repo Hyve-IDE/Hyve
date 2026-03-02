@@ -17,9 +17,21 @@ data class KnowledgeConfig(
     val indexPath: String = "",
     val resultsPerCorpus: Int = 10,
     val maxRelatedConnections: Int = 5,
+    val activeVersion: String = "",
 ) {
     fun resolvedIndexPath(): File {
+        val base = if (indexPath.isNotBlank()) File(indexPath) else defaultBasePath()
+        if (activeVersion.isNotBlank()) return File(base, "versions/$activeVersion")
+        return base
+    }
+
+    /** Base knowledge directory without version suffix. */
+    fun resolvedBasePath(): File {
         if (indexPath.isNotBlank()) return File(indexPath)
+        return defaultBasePath()
+    }
+
+    private fun defaultBasePath(): File {
         val home = System.getProperty("user.home")
         return Paths.get(home, ".hyve", "knowledge").toFile()
     }
@@ -44,6 +56,7 @@ data class KnowledgeConfig(
                 indexPath = config.indexPath,
                 resultsPerCorpus = config.resultsPerCorpus,
                 maxRelatedConnections = config.maxRelatedConnections,
+                activeVersion = config.activeVersion.ifBlank { null },
             )
             file.parentFile?.mkdirs()
             file.writeText(json.encodeToString(FileConfig.serializer(), fileConfig))
@@ -65,6 +78,7 @@ data class KnowledgeConfig(
                     indexPath = fc.indexPath ?: defaults.indexPath,
                     resultsPerCorpus = fc.resultsPerCorpus ?: defaults.resultsPerCorpus,
                     maxRelatedConnections = fc.maxRelatedConnections ?: defaults.maxRelatedConnections,
+                    activeVersion = fc.activeVersion ?: defaults.activeVersion,
                 )
             } catch (_: Exception) {
                 null
@@ -84,5 +98,6 @@ data class KnowledgeConfig(
         val indexPath: String? = null,
         val resultsPerCorpus: Int? = null,
         val maxRelatedConnections: Int? = null,
+        val activeVersion: String? = null,
     )
 }

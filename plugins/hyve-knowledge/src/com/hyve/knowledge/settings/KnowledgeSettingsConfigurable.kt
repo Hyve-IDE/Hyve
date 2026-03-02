@@ -1,6 +1,10 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.knowledge.settings
 
+import com.hyve.common.settings.HytaleVersionDetector
+import com.hyve.knowledge.bridge.KnowledgeDatabaseFactory
+import com.hyve.knowledge.bridge.toConfig
+import com.hyve.knowledge.core.config.KnowledgeConfig
 import com.hyve.knowledge.docs.ui.LOCALE_DISPLAY_NAMES
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
@@ -9,6 +13,9 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.*
+import kotlinx.serialization.json.Json
+import java.io.File
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
 import javax.swing.JPasswordField
 
@@ -38,7 +45,7 @@ class KnowledgeSettingsConfigurable : SearchableConfigurable, Configurable.Compo
 }
 
 /**
- * General settings: paths, documentation source, auto-index toggle.
+ * General settings: game version, paths, documentation source, auto-index toggle.
  */
 private class GeneralConfigurable : BoundConfigurable("General") {
 
@@ -46,6 +53,48 @@ private class GeneralConfigurable : BoundConfigurable("General") {
 
     override fun createPanel(): DialogPanel = panel {
         val state = settings.state
+
+        group("Game Version") {
+            row("Detected:") {
+                val info = HytaleVersionDetector.detectFromInstall()
+                val label = if (info != null) info.displayName else "(not detected)"
+                label(label).comment(
+                    if (info != null) "Patchline: ${info.patchline}, Date: ${info.date}"
+                    else "Configure Hytale install path to enable version detection"
+                )
+            }
+            row("Active version:") {
+                val knownVersions = parseKnownVersions(state.knownVersions)
+                val items = mutableListOf("(legacy / unversioned)")
+                items.addAll(knownVersions)
+                val model = DefaultComboBoxModel(items.toTypedArray())
+                comboBox(model)
+                    .bindItem(
+                        getter = {
+                            val v = state.activeVersion
+                            if (v.isBlank()) "(legacy / unversioned)" else v
+                        },
+                        setter = { value ->
+                            val newVersion = if (value == "(legacy / unversioned)") "" else value ?: ""
+                            if (newVersion != state.activeVersion) {
+                                state.activeVersion = newVersion
+                                KnowledgeDatabaseFactory.resetInstance()
+                                KnowledgeConfig.writeToFile(settings.toConfig())
+                            }
+                        },
+                    )
+                    .comment("Switch the active knowledge base version")
+            }
+            row {
+                val versionsDir = File(settings.resolvedBasePath(), "versions")
+                val versionDirs = if (versionsDir.isDirectory) {
+                    versionsDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
+                } else emptyList()
+                if (versionDirs.isNotEmpty()) {
+                    label("Known versions: ${versionDirs.joinToString(", ")}")
+                }
+            }
+        }
 
         group("Documentation") {
             row("Language:") {
@@ -100,6 +149,14 @@ private class GeneralConfigurable : BoundConfigurable("General") {
         }
     }
 
+    private fun parseKnownVersions(json: String): List<String> {
+        if (json.isBlank()) return emptyList()
+        return try {
+            Json.decodeFromString<List<String>>(json)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 }
 
 /**

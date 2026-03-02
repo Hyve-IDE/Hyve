@@ -192,6 +192,12 @@ tasks {
     buildSearchableOptions {
         enabled = false
     }
+
+    runIde {
+        jvmArgumentProviders += CommandLineArgumentProvider {
+            listOf("-Xmx8g")
+        }
+    }
 }
 
 tasks.withType<ProcessResources> {

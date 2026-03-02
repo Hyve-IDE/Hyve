@@ -7,6 +7,9 @@ import com.hyve.knowledge.bridge.IntelliJLogProvider
 import com.hyve.knowledge.bridge.toConfig
 import com.hyve.knowledge.core.db.Corpus
 import com.hyve.knowledge.core.db.KnowledgeDatabase
+import com.hyve.knowledge.core.diff.DiffCache
+import com.hyve.knowledge.core.diff.DiffEngine
+import com.hyve.knowledge.core.diff.DiffExporter
 import com.hyve.knowledge.core.index.CorpusIndexManager
 import com.hyve.knowledge.core.search.IndexStats
 import com.hyve.knowledge.core.search.KnowledgeSearchService
@@ -154,6 +157,55 @@ class HytaleKnowledgeToolset : McpToolset {
     """)
     suspend fun hytale_docs_stats(): IndexStats {
         return searchService.getCorpusStats(Corpus.DOCS)
+    }
+
+    // ── Version Diff ──────────────────────────────────────────────
+
+    @McpTool
+    @McpDescription("""
+        |Compare two indexed Hytale game versions to find what changed.
+        |Shows added, removed, and changed nodes across code, game data, and client UI.
+        |For game data changes, includes field-level diffs showing exactly what values changed.
+    """)
+    suspend fun diff_hytale_versions(
+        @McpDescription("Version slug of the old version (e.g., release_2026.02.19-1a311a592)") versionA: String,
+        @McpDescription("Version slug of the new version (e.g., pre-release_2026.02.26-7681d338c)") versionB: String,
+        @McpDescription("Filter to a specific corpus: code, gamedata, client, or all (default: all)") corpus: String = "all",
+        @McpDescription("Filter by change type: ADDED, REMOVED, CHANGED, or all (default: all)") changeType: String = "all",
+        @McpDescription("Filter by data type (e.g., item, recipe, npc)") dataType: String? = null,
+        @McpDescription("Maximum entries to return (default 50, max 200)") limit: Int = 50,
+    ): String {
+        val log = IntelliJLogProvider(HytaleKnowledgeToolset::class.java)
+        val settings = KnowledgeSettings.getInstance()
+        val basePath = settings.resolvedBasePath()
+
+        val dbFileA = java.io.File(basePath, "versions/$versionA/knowledge.db")
+        val dbFileB = java.io.File(basePath, "versions/$versionB/knowledge.db")
+
+        if (!dbFileA.exists()) return "Error: Version A database not found at ${dbFileA.absolutePath}"
+        if (!dbFileB.exists()) return "Error: Version B database not found at ${dbFileB.absolutePath}"
+
+        val cache = DiffCache(basePath, log)
+        val cached = cache.get(versionA, versionB)
+        val diff = if (cached != null) {
+            cached
+        } else {
+            val engine = DiffEngine(log)
+            val result = engine.computeDiff(
+                versionA = versionA,
+                versionB = versionB,
+                dbFileA = dbFileA,
+                dbFileB = dbFileB,
+                corpusFilter = if (corpus != "all") corpus else null,
+                changeTypeFilter = if (changeType != "all") changeType else null,
+                dataTypeFilter = dataType,
+                limit = limit.coerceIn(1, 200),
+            )
+            cache.put(result)
+            result
+        }
+
+        return DiffExporter.toMarkdown(diff)
     }
 
     // ── Helpers ──────────────────────────────────────────────────

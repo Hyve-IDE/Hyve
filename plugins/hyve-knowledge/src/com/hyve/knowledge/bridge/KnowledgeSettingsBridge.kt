@@ -17,5 +17,6 @@ fun KnowledgeSettings.toConfig(): KnowledgeConfig {
         indexPath = s.indexPath,
         resultsPerCorpus = s.resultsPerCorpus,
         maxRelatedConnections = s.maxRelatedConnections,
+        activeVersion = s.activeVersion,
     )
 }

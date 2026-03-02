@@ -76,9 +76,13 @@ class UIExporter(
             // The parser creates a synthetic Root (type="Root") for multi-element files,
             // and the editor uses Group #Root as its canvas root container.
             // Both should be unwrapped so only the user's elements are exported.
-            val isEditorRoot = document.root.type.value == "Root" ||
-                (document.root.type.value == "Group" && document.root.id?.value == "Root")
-            if (isEditorRoot) {
+            // Group #Root is only unwrapped when it has children; a childless
+            // Group #Root is a valid authored element and must be preserved.
+            val isSyntheticRoot = document.root.type.value == "Root"
+            val isEditorRoot = document.root.type.value == "Group" &&
+                document.root.id?.value == "Root" &&
+                document.root.children.isNotEmpty()
+            if (isSyntheticRoot || isEditorRoot) {
                 exportChildren(document.root.children, formatter)
             } else {
                 exportElement(document.root, formatter)

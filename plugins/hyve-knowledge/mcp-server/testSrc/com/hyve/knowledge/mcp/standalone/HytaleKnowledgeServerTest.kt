@@ -46,9 +46,9 @@ class HytaleKnowledgeServerTest {
     // ── Tool registration ─────────────────────────────────────
 
     @Test
-    fun `createServer registers exactly 8 tools`() {
+    fun `createServer registers exactly 9 tools`() {
         val mcpServer = server.createServer()
-        assertEquals(8, mcpServer.tools.size)
+        assertEquals(9, mcpServer.tools.size)
     }
 
     @Test
@@ -64,6 +64,7 @@ class HytaleKnowledgeServerTest {
             { assertTrue("hytale_client_code_stats" in names) },
             { assertTrue("hytale_gamedata_stats" in names) },
             { assertTrue("hytale_docs_stats" in names) },
+            { assertTrue("diff_hytale_versions" in names) },
         )
     }
 

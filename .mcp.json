@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ij-mcp": {
+      "type": "sse",
+      "url": "http://localhost:64342/sse"
+    }
+  }
+}

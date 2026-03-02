@@ -108,5 +108,11 @@
         description="Configure standalone MCP server for external LLM clients">
       <add-to-group group-id="ToolsMenu" anchor="last"/>
     </action>
+    <action id="HyveCompareVersions"
+        class="com.hyve.knowledge.actions.CompareVersionsAction"
+        text="Compare Hytale Versions..."
+        description="Compare two indexed Hytale game versions to find what changed">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
   </actions>
 </idea-plugin>

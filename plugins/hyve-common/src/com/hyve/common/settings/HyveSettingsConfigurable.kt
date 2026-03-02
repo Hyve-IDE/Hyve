@@ -35,6 +35,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
 
     // Path override fields
     private var assetsZipOverrideField: TextFieldWithBrowseButton? = null
+    private var clientUiOverrideField: TextFieldWithBrowseButton? = null
     private var serverJarOverrideField: TextFieldWithBrowseButton? = null
     private var modsOverrideField: TextFieldWithBrowseButton? = null
 
@@ -81,6 +82,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
 
         // --- Path override fields ---
         val derivedAssets = HytaleInstallPath.assetsZipPath()?.toString() ?: ""
+        val derivedClientUi = HytaleInstallPath.interfaceFolderPath()?.toString() ?: ""
         val derivedJar = HytaleInstallPath.serverJarPath()?.toString() ?: ""
         val derivedMods = HytaleInstallPath.serverModsPath()?.toString() ?: ""
 
@@ -93,6 +95,17 @@ class HyveSettingsConfigurable : SearchableConfigurable {
                     .withDescription("Choose the Hytale Assets.zip file")
             )
             (textField as? JBTextField)?.emptyText?.setText(derivedAssets.ifBlank { "Derived from install path" })
+        }
+
+        clientUiOverrideField = TextFieldWithBrowseButton().apply {
+            text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_CLIENT_UI) ?: ""
+            addBrowseFolderListener(
+                null,
+                FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                    .withTitle("Select Client UI Folder")
+                    .withDescription("Choose the Hytale Interface directory (contains .ui files)")
+            )
+            (textField as? JBTextField)?.emptyText?.setText(derivedClientUi.ifBlank { "Derived from install path" })
         }
 
         serverJarOverrideField = TextFieldWithBrowseButton().apply {
@@ -127,6 +140,8 @@ class HyveSettingsConfigurable : SearchableConfigurable {
                     val dir = chooser.selectedFile
                     val zip = File(dir, "Assets.zip")
                     if (zip.isFile) assetsZipOverrideField?.text = zip.absolutePath
+                    val iface = File(dir, "Client/Data/Game/Interface")
+                    if (iface.isDirectory) clientUiOverrideField?.text = iface.absolutePath
                     val jar = File(dir, "Server/HytaleServer.jar")
                     if (jar.isFile) serverJarOverrideField?.text = jar.absolutePath
                     val mods = File(dir, "Server/Mods")
@@ -140,6 +155,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             add(JButton("Clear Overrides").apply {
                 addActionListener {
                     assetsZipOverrideField?.text = ""
+                    clientUiOverrideField?.text = ""
                     serverJarOverrideField?.text = ""
                     modsOverrideField?.text = ""
                 }
@@ -164,6 +180,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             .addComponent(TitledSeparator("Path Overrides"))
             .addComponent(JBLabel("<html><font size='-2' color='gray'>Override individual paths when they differ from the install path. Leave blank to use derived defaults.</font></html>"))
             .addLabeledComponent("Assets zip:", assetsZipOverrideField!!)
+            .addLabeledComponent("Client UI:", clientUiOverrideField!!)
             .addLabeledComponent("Server jar:", serverJarOverrideField!!)
             .addLabeledComponent("Mods folder:", modsOverrideField!!)
             .addComponent(overrideButtonsPanel)
@@ -193,14 +210,21 @@ class HyveSettingsConfigurable : SearchableConfigurable {
             return
         }
 
-        val serverJar = File(root, "Server/HytaleServer.jar")
-        if (serverJar.exists()) {
-            statusLabel?.text = "<html><font color='#6A8759'>Valid Hytale installation</font></html>"
+        // Resolve the macOS .app bundle data root (if present)
+        val appBundle = HytalePathDetector.findAppBundle(root.toPath())
+        val bundleData = appBundle?.resolve("Contents/Resources/Data")
+
+        // Overall status — check server jar at both direct and bundle paths
+        val serverJarDirect = File(root, "Server/HytaleServer.jar")
+        val serverJarBundle = bundleData?.let { File(it, "Server/HytaleServer.jar") }
+        val serverJarFound = serverJarDirect.exists() || serverJarBundle?.exists() == true
+        statusLabel?.text = if (serverJarFound) {
+            "<html><font color='#6A8759'>Valid Hytale installation</font></html>"
         } else {
-            statusLabel?.text = "<html><font color='#CC7832'>Server/HytaleServer.jar not found</font></html>"
+            "<html><font color='#CC7832'>Server/HytaleServer.jar not found</font></html>"
         }
 
-        // Assets.zip — check override first, then derived
+        // Assets.zip — check override first, then derived (direct + bundle)
         val assetsOverride = assetsZipOverrideField?.text?.takeIf { it.isNotBlank() }
         if (assetsOverride != null) {
             val overrideFile = File(assetsOverride)
@@ -210,29 +234,47 @@ class HyveSettingsConfigurable : SearchableConfigurable {
                 "<html><font color='#CC7832'>  Assets.zip override not found: $assetsOverride</font></html>"
             }
         } else {
-            val assetsZip = File(root, "Assets.zip")
-            assetsStatusLabel?.text = if (assetsZip.exists()) {
+            val assetsDirect = File(root, "Assets.zip")
+            val assetsBundle = bundleData?.let { File(it, "Assets.zip") }
+            val assetsFound = assetsDirect.exists() || assetsBundle?.exists() == true
+            assetsStatusLabel?.text = if (assetsFound) {
                 "<html><font color='#6A8759'>  Assets.zip found</font></html>"
             } else {
                 "<html><font color='#CC7832'>  Assets.zip not found</font></html>"
             }
         }
 
-        // Client folder + .ui file count
-        val clientDir = File(root, "Client")
-        val interfaceDir = File(clientDir, "Data/Game/Interface")
-        clientStatusLabel?.text = if (interfaceDir.exists() && interfaceDir.isDirectory) {
-            val uiCount = interfaceDir.walkTopDown()
-                .filter { it.extension == "ui" }
-                .count()
-            "<html><font color='#6A8759'>  Client folder found ($uiCount .ui files)</font></html>"
-        } else if (clientDir.exists()) {
-            "<html><font color='#CC7832'>  Client folder found (Interface subfolder missing)</font></html>"
+        // Client UI folder — check override first, then derived (direct + bundle)
+        val clientUiOverride = clientUiOverrideField?.text?.takeIf { it.isNotBlank() }
+        if (clientUiOverride != null) {
+            val overrideDir = File(clientUiOverride)
+            if (overrideDir.isDirectory) {
+                val uiCount = overrideDir.walkTopDown().filter { it.extension == "ui" }.count()
+                clientStatusLabel?.text =
+                    "<html><font color='#6A8759'>  Client UI (override): $uiCount .ui files</font></html>"
+            } else {
+                clientStatusLabel?.text =
+                    "<html><font color='#CC7832'>  Client UI override not found: $clientUiOverride</font></html>"
+            }
         } else {
-            "<html><font color='#CC7832'>  Client folder not found</font></html>"
+            val interfaceDirect = File(root, "Client/Data/Game/Interface")
+            val interfaceBundle = bundleData?.let { File(it, "Game/Interface") }
+            val interfaceDir = when {
+                interfaceDirect.isDirectory -> interfaceDirect
+                interfaceBundle?.isDirectory == true -> interfaceBundle
+                else -> null
+            }
+            clientStatusLabel?.text = if (interfaceDir != null) {
+                val uiCount = interfaceDir.walkTopDown().filter { it.extension == "ui" }.count()
+                "<html><font color='#6A8759'>  Client UI found ($uiCount .ui files)</font></html>"
+            } else if (File(root, "Client").exists()) {
+                "<html><font color='#CC7832'>  Client folder found (Interface subfolder missing)</font></html>"
+            } else {
+                "<html><font color='#CC7832'>  Client folder not found</font></html>"
+            }
         }
 
-        // Server jar — check override first, then derived
+        // Server jar — check override first, then derived (direct + bundle)
         val jarOverride = serverJarOverrideField?.text?.takeIf { it.isNotBlank() }
         if (jarOverride != null) {
             val overrideFile = File(jarOverride)
@@ -242,7 +284,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
                 "<html><font color='#CC7832'>  Server jar override not found: $jarOverride</font></html>"
             }
         } else {
-            serverStatusLabel?.text = if (serverJar.exists()) {
+            serverStatusLabel?.text = if (serverJarFound) {
                 "<html><font color='#6A8759'>  Server/HytaleServer.jar found</font></html>"
             } else {
                 "<html><font color='#CC7832'>  Server/HytaleServer.jar not found</font></html>"
@@ -258,6 +300,10 @@ class HyveSettingsConfigurable : SearchableConfigurable {
         val assetsOverride = assetsZipOverrideField?.text ?: ""
         val savedAssets = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
         if (assetsOverride != savedAssets) return true
+
+        val clientUiOverride = clientUiOverrideField?.text ?: ""
+        val savedClientUi = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_CLIENT_UI) ?: ""
+        if (clientUiOverride != savedClientUi) return true
 
         val jarOverride = serverJarOverrideField?.text ?: ""
         val savedJar = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
@@ -279,6 +325,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
         }
 
         applyOverride(HytaleInstallPath.KEY_ASSETS_ZIP, assetsZipOverrideField?.text)
+        applyOverride(HytaleInstallPath.KEY_CLIENT_UI, clientUiOverrideField?.text)
         applyOverride(HytaleInstallPath.KEY_SERVER_JAR, serverJarOverrideField?.text)
         applyOverride(HytaleInstallPath.KEY_SERVER_MODS, modsOverrideField?.text)
 
@@ -296,6 +343,7 @@ class HyveSettingsConfigurable : SearchableConfigurable {
     override fun reset() {
         installPathField?.text = HytaleInstallPath.get()?.toString() ?: ""
         assetsZipOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_ASSETS_ZIP) ?: ""
+        clientUiOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_CLIENT_UI) ?: ""
         serverJarOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_JAR) ?: ""
         modsOverrideField?.text = HytaleInstallPath.getOverride(HytaleInstallPath.KEY_SERVER_MODS) ?: ""
         updateAllStatusLabels()

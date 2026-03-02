@@ -2,6 +2,7 @@
 package com.hyve.knowledge.index
 
 import com.hyve.common.settings.HytaleInstallPath
+import com.hyve.knowledge.bridge.EmbeddingCacheFactory
 import com.hyve.knowledge.bridge.KnowledgeDatabaseFactory
 import com.hyve.knowledge.bridge.toConfig
 import com.hyve.knowledge.core.db.Corpus
@@ -137,7 +138,7 @@ class GameDataIndexerTask(
 
         if (indicator.isCanceled) return
 
-        // ── Phase 3: Embed ──────────────────────────────────────
+        // ── Phase 3: Embed (with cache) ─────────────────────────
         val embeddings: List<FloatArray>
         if (chunksToEmbed.isNotEmpty()) {
             indicator.text = "Embedding ${chunksToEmbed.size} game data chunks..."
@@ -147,19 +148,30 @@ class GameDataIndexerTask(
             runBlocking { provider.validate() }
 
             val texts = chunksToEmbed.map { it.textForEmbedding }
-            val batchSize = 32
-            val batches = texts.chunked(batchSize)
-            val allEmbeddings = mutableListOf<FloatArray>()
+            val cacheService = EmbeddingCacheFactory.getService()
+            val cacheResult = cacheService.lookup(texts, provider.modelId)
 
-            runBlocking {
-                for ((batchIdx, batch) in batches.withIndex()) {
-                    if (indicator.isCanceled) return@runBlocking
-                    indicator.text2 = "Batch ${batchIdx + 1}/${batches.size}"
-                    indicator.fraction = 0.35 + (0.35 * batchIdx / batches.size.coerceAtLeast(1))
-                    allEmbeddings.addAll(provider.embed(batch))
+            val uncachedTexts = cacheResult.uncachedIndices.map { texts[it] }
+            val newEmbeddings = mutableListOf<FloatArray>()
+
+            if (uncachedTexts.isNotEmpty()) {
+                val batchSize = 32
+                val batches = uncachedTexts.chunked(batchSize)
+                runBlocking {
+                    for ((batchIdx, batch) in batches.withIndex()) {
+                        if (indicator.isCanceled) return@runBlocking
+                        indicator.text2 = "Batch ${batchIdx + 1}/${batches.size} (${cacheResult.cached.size} cached)"
+                        indicator.fraction = 0.35 + (0.35 * batchIdx / batches.size.coerceAtLeast(1))
+                        newEmbeddings.addAll(provider.embed(batch))
+                    }
                 }
+                cacheService.store(uncachedTexts, newEmbeddings, provider.modelId)
             }
-            embeddings = allEmbeddings
+
+            val merged = arrayOfNulls<FloatArray>(texts.size)
+            for ((idx, vec) in cacheResult.cached) { merged[idx] = vec }
+            for ((i, origIdx) in cacheResult.uncachedIndices.withIndex()) { merged[origIdx] = newEmbeddings[i] }
+            embeddings = merged.map { it!! }
         } else {
             embeddings = emptyList()
         }

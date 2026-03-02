@@ -43,6 +43,9 @@ object McpConfig {
                 ?: defaults.resultsPerCorpus,
             maxRelatedConnections = fileConfig?.maxRelatedConnections
                 ?: defaults.maxRelatedConnections,
+            activeVersion = env("HYVE_ACTIVE_VERSION")
+                ?: fileConfig?.activeVersion
+                ?: defaults.activeVersion,
         )
     }
 

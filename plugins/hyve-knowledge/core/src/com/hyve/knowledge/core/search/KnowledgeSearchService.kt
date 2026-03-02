@@ -9,10 +9,23 @@ import com.hyve.knowledge.core.logging.StdoutLogProvider
 import kotlinx.coroutines.runBlocking
 
 class KnowledgeSearchService(
-    private val db: KnowledgeDatabase,
-    private val indexManager: CorpusIndexManager,
+    private var db: KnowledgeDatabase,
+    private var indexManager: CorpusIndexManager,
     private val log: LogProvider = StdoutLogProvider,
 ) {
+
+    /**
+     * Hot-swap the underlying database and index manager (e.g., on version change).
+     * Closes old resources before switching.
+     */
+    fun reinitialize(newDb: KnowledgeDatabase, newIndexManager: CorpusIndexManager) {
+        log.info("Reinitializing search service with new database and index manager")
+        indexManager.closeAll()
+        // Don't close the old db here — caller manages its lifecycle
+        db = newDb
+        indexManager = newIndexManager
+    }
+
 
     // ── Code corpus search (original behavior) ──────────────────
 

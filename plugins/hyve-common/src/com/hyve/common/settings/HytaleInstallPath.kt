@@ -30,6 +30,7 @@ object HytaleInstallPath {
     const val KEY_ASSETS_ZIP = "hytale.assets.zip.path"
     const val KEY_SERVER_JAR = "hytale.server.jar.path"
     const val KEY_SERVER_MODS = "hytale.server.mods.path"
+    const val KEY_CLIENT_UI = "hytale.client.ui.path"
 
     init {
         importSeedFile()
@@ -101,6 +102,7 @@ object HytaleInstallPath {
     fun clientFolderPath(): Path? = get()?.resolve("Client")
 
     fun interfaceFolderPath(): Path? {
+        getOverride(KEY_CLIENT_UI)?.let { return Paths.get(it) }
         val root = get() ?: return null
         // Check Mac .app bundle first
         val appBundle = HytalePathDetector.findAppBundle(root)
@@ -127,6 +129,7 @@ object HytaleInstallPath {
      * this returns the union so schema discovery can scan the full corpus.
      */
     fun interfaceFolderPaths(): List<Path> {
+        getOverride(KEY_CLIENT_UI)?.let { return listOf(Paths.get(it)) }
         val root = get() ?: return emptyList()
         val paths = mutableListOf<Path>()
         val appBundle = HytalePathDetector.findAppBundle(root)

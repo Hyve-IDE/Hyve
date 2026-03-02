@@ -1,9 +1,15 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.knowledge.mcp.standalone
 
+import com.hyve.knowledge.core.config.KnowledgeConfig
 import com.hyve.knowledge.core.db.Corpus
+import com.hyve.knowledge.core.diff.DiffCache
+import com.hyve.knowledge.core.diff.DiffEngine
+import com.hyve.knowledge.core.diff.DiffExporter
+import com.hyve.knowledge.core.logging.StdoutLogProvider
 import com.hyve.knowledge.core.search.KnowledgeSearchService
 import com.hyve.knowledge.core.search.SearchResult
+import java.io.File
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
@@ -45,6 +51,7 @@ class HytaleKnowledgeServer(
             clientStatsTool(),
             gamedataStatsTool(),
             docsStatsTool(),
+            diffVersionsTool(),
         ))
 
         return server
@@ -249,6 +256,66 @@ class HytaleKnowledgeServer(
                 successResult(json.encodeToString(com.hyve.knowledge.core.search.IndexStats.serializer(), stats))
             } catch (e: Exception) {
                 errorResult("Failed to get stats: ${e.message}")
+            }
+        }
+    }
+
+    private fun diffVersionsTool(): RegisteredTool {
+        val tool = Tool(
+            name = "diff_hytale_versions",
+            description = "Compare two indexed Hytale game versions to find what changed. " +
+                "Shows added, removed, and changed nodes across code, game data, and client UI.",
+            inputSchema = toolSchema(
+                "versionA" to propString("Version slug of the old version (e.g., release_2026.02.19-1a311a592)"),
+                "versionB" to propString("Version slug of the new version (e.g., pre-release_2026.02.26-7681d338c)"),
+                "corpus" to propString("Filter to a specific corpus: code, gamedata, client, or all (default: all)"),
+                "changeType" to propString("Filter by change type: ADDED, REMOVED, CHANGED, or all (default: all)"),
+                "dataType" to propString("Filter by data type (e.g., item, recipe, npc)"),
+                "limit" to propInt("Maximum entries to return (default 50, max 200)"),
+                required = listOf("versionA", "versionB"),
+            ),
+        )
+        return RegisteredTool(tool) { request ->
+            val versionA = request.arguments?.getString("versionA") ?: return@RegisteredTool errorResult("Missing 'versionA' parameter")
+            val versionB = request.arguments?.getString("versionB") ?: return@RegisteredTool errorResult("Missing 'versionB' parameter")
+            val corpus = request.arguments?.getString("corpus") ?: "all"
+            val changeType = request.arguments?.getString("changeType") ?: "all"
+            val dataType = request.arguments?.getString("dataType")
+            val limit = request.arguments?.getInt("limit") ?: 50
+            try {
+                val log = StdoutLogProvider
+                val config = McpConfig.load()
+                val basePath = config.resolvedBasePath()
+
+                val dbFileA = File(basePath, "versions/$versionA/knowledge.db")
+                val dbFileB = File(basePath, "versions/$versionB/knowledge.db")
+
+                if (!dbFileA.exists()) return@RegisteredTool errorResult("Version A database not found at ${dbFileA.absolutePath}")
+                if (!dbFileB.exists()) return@RegisteredTool errorResult("Version B database not found at ${dbFileB.absolutePath}")
+
+                val cache = DiffCache(basePath, log)
+                val cached = cache.get(versionA, versionB)
+                val diff = if (cached != null) {
+                    cached
+                } else {
+                    val engine = DiffEngine(log)
+                    val result = engine.computeDiff(
+                        versionA = versionA,
+                        versionB = versionB,
+                        dbFileA = dbFileA,
+                        dbFileB = dbFileB,
+                        corpusFilter = if (corpus != "all") corpus else null,
+                        changeTypeFilter = if (changeType != "all") changeType else null,
+                        dataTypeFilter = dataType,
+                        limit = limit.coerceIn(1, 200),
+                    )
+                    cache.put(result)
+                    result
+                }
+
+                successResult(DiffExporter.toMarkdown(diff))
+            } catch (e: Exception) {
+                errorResult("Diff computation failed: ${e.message}")
             }
         }
     }

@@ -39,6 +39,9 @@ class KnowledgeSettings : PersistentStateComponent<KnowledgeSettings.State> {
         // Search
         var resultsPerCorpus: Int = 10
         var maxRelatedConnections: Int = 5
+        // Version management
+        var activeVersion: String = ""     // slug of active version (empty = legacy unversioned)
+        var knownVersions: String = ""     // JSON array of known version slugs
     }
 
     override fun getState(): State = myState
@@ -66,14 +69,19 @@ class KnowledgeSettings : PersistentStateComponent<KnowledgeSettings.State> {
     fun resolvedDecompilePath(): java.io.File {
         val configured = myState.decompileOutputPath
         if (configured.isNotBlank()) return java.io.File(configured)
+        val version = myState.activeVersion
+        if (version.isNotBlank()) {
+            return defaultBasePath().resolve("versions/$version/decompiled").toFile()
+        }
         return defaultBasePath().resolve("decompiled").toFile()
     }
 
     /** Resolved base path for index data. Falls back to ~/.hyve/knowledge/ */
     fun resolvedIndexPath(): java.io.File {
-        val configured = myState.indexPath
-        if (configured.isNotBlank()) return java.io.File(configured)
-        return defaultBasePath().toFile()
+        val base = if (myState.indexPath.isNotBlank()) java.io.File(myState.indexPath) else defaultBasePath().toFile()
+        val version = myState.activeVersion
+        if (version.isNotBlank()) return java.io.File(base, "versions/$version")
+        return base
     }
 
     /** Resolved base path for offline docs cache. */
@@ -84,6 +92,12 @@ class KnowledgeSettings : PersistentStateComponent<KnowledgeSettings.State> {
     /** Resolved path for a specific locale's offline docs. */
     fun resolvedOfflineDocsPath(locale: String): java.io.File {
         return resolvedOfflineDocsPath().resolve(locale)
+    }
+
+    /** Base knowledge directory without version suffix. Used by version management UI. */
+    fun resolvedBasePath(): java.io.File {
+        if (myState.indexPath.isNotBlank()) return java.io.File(myState.indexPath)
+        return defaultBasePath().toFile()
     }
 
     private fun defaultBasePath(): java.nio.file.Path {

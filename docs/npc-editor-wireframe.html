@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPC Node Editor — Wireframe</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  #toolbar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2d2d2d;
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: #d4d4d4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .toggle-btn:hover { background: #353535; border-color: #555; }
+
+  .toggle-btn.active {
+    background: #1f3a52;
+    border-color: #4a9eda;
+    color: #9dcfee;
+  }
+
+  .toggle-indicator {
+    width: 28px;
+    height: 15px;
+    border-radius: 8px;
+    background: #444;
+    position: relative;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .toggle-btn.active .toggle-indicator { background: #4a9eda; }
+
+  .toggle-indicator::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #888;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .toggle-btn.active .toggle-indicator::after {
+    transform: translateX(13px);
+    background: #fff;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d2d2d;
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: #888;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  #canvas-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  #canvas-container.panning { cursor: grabbing; }
+
+  svg#main-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .grid-bg { pointer-events: none; }
+
+  /* Group containers */
+  .group-rect {
+    rx: 12;
+    ry: 12;
+    fill: #252525;
+    stroke-width: 1.5;
+  }
+
+  .group-header {
+    rx: 10;
+    ry: 10;
+    height: 32px;
+  }
+
+  .group-label {
+    font-size: 13px;
+    font-weight: 700;
+    fill: #fff;
+    dominant-baseline: middle;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+  }
+
+  /* Substate nodes */
+  .substate-node {
+    cursor: grab;
+  }
+
+  .substate-node:active { cursor: grabbing; }
+
+  .substate-rect {
+    rx: 8;
+    ry: 8;
+    stroke-width: 1;
+  }
+
+  .substate-title {
+    font-size: 12px;
+    font-weight: 700;
+    fill: #e8e8e8;
+    dominant-baseline: hanging;
+    pointer-events: none;
+  }
+
+  .substate-divider {
+    stroke: #444;
+    stroke-width: 1;
+    pointer-events: none;
+  }
+
+  .substate-item {
+    font-size: 11px;
+    fill: #aaa;
+    dominant-baseline: hanging;
+    pointer-events: none;
+  }
+
+  .substate-item-icon {
+    font-size: 10px;
+    fill: #666;
+    dominant-baseline: hanging;
+    pointer-events: none;
+  }
+
+  /* Arrows */
+  .transition-arrow {
+    fill: none;
+    stroke-width: 1.5;
+    marker-end: none;
+  }
+
+  .arrow-label-bg {
+    fill: #1e1e1e;
+    rx: 3;
+    ry: 3;
+  }
+
+  .arrow-label-text {
+    font-size: 10px;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button class="toggle-btn active" id="btn-transitions" onclick="toggleTransitions()">
+    <div class="toggle-indicator"></div>
+    Show Transitions
+  </button>
+  <button class="toggle-btn active" id="btn-internal" onclick="toggleInternal()">
+    <div class="toggle-indicator"></div>
+    Show Internal Transitions
+  </button>
+</div>
+
+<div id="hint">Drag to pan &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Drag nodes/groups to reposition</div>
+
+<div id="canvas-container">
+  <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#2a2a2a" stroke-width="0.75"/>
+      </pattern>
+      <pattern id="grid-major" width="120" height="120" patternUnits="userSpaceOnUse">
+        <rect width="120" height="120" fill="url(#grid)"/>
+        <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#303030" stroke-width="1"/>
+      </pattern>
+      <!-- Arrowheads for each color -->
+      <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+      </marker>
+      <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#4a9eda"/>
+      </marker>
+      <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#9b59b6"/>
+      </marker>
+      <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#e05555"/>
+      </marker>
+      <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#d4a017"/>
+      </marker>
+    </defs>
+
+    <!-- Grid background (always rendered at world 0,0 large area) -->
+    <g id="world-bg">
+      <rect x="-5000" y="-5000" width="20000" height="20000" fill="url(#grid-major)"/>
+    </g>
+
+    <!-- World transform group -->
+    <g id="world">
+      <!-- Groups and nodes rendered by JS -->
+    </g>
+
+    <!-- Arrow layer (above nodes to overlap, below groups if needed; actually drawn first = below nodes) -->
+    <g id="arrow-layer">
+    </g>
+  </svg>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let showTransitions = true;
+let showInternal    = true;
+
+// Camera
+let camX = 0, camY = 0, camScale = 1;
+
+// Colors per group
+const GROUP_COLORS = {
+  Idle:       { header: '#1a3a5c', stroke: '#4a9eda', marker: 'arrow-blue',   arrow: '#4a9eda'  },
+  Sleep:      { header: '#2d1a4a', stroke: '#9b59b6', marker: 'arrow-purple', arrow: '#9b59b6' },
+  Combat:     { header: '#4a1a1a', stroke: '#e05555', marker: 'arrow-red',    arrow: '#e05555'  },
+  ReturnHome: { header: '#3a2e00', stroke: '#d4a017', marker: 'arrow-yellow', arrow: '#d4a017'  },
+};
+
+const INTERNAL_COLOR   = '#555';
+const INTERNAL_MARKER  = 'arrow-gray';
+
+// ─── Data Model ──────────────────────────────────────────────────────────────
+
+const NODE_W  = 188;
+const PAD     = 16;
+const TITLE_H = 24;
+const DIVIDER = 8;
+const ITEM_H  = 17;
+const HEADER_H = 32;
+const GROUP_PAD = 18;
+
+function nodeHeight(items) {
+  return TITLE_H + DIVIDER + items.length * ITEM_H + PAD;
+}
+
+// Groups: each has position (x,y) in world space, plus sub-nodes
+// Sub-nodes have position relative to group interior (after header)
+let groups = [
+  {
+    id: 'Idle',
+    label: 'Idle',
+    x: 60, y: 80,
+    nodes: [
+      {
+        id: 'Idle.Default',
+        label: '.Default',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H,
+        items: [
+          { icon: '⚂', text: 'Random: 80% → .Guard' },
+          { icon: '⚂', text: 'Random: 20% → Sleep' },
+        ]
+      },
+      {
+        id: 'Idle.Guard',
+        label: '.Guard',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H + nodeHeight([1,2]) + 12,
+        items: [
+          { icon: '⏱', text: 'Timeout 15–30s → .Default' },
+          { icon: '⊛', text: 'Ref: Component_Follow_Path' },
+        ]
+      },
+      {
+        id: 'Idle.FindFood',
+        label: '.FindFood',
+        rx: GROUP_PAD + NODE_W + 12, ry: GROUP_PAD + HEADER_H,
+        items: [
+          { icon: '⊙', text: 'Seek nearest food' },
+          { icon: '▶', text: 'Eat item' },
+          { icon: '→', text: 'Then → .Default' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'Sleep',
+    label: 'Sleep',
+    x: 580, y: 60,
+    nodes: [
+      {
+        id: 'Sleep.Default',
+        label: '.Default',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H,
+        items: [
+          { icon: '⏱', text: 'Timeout 30–45s' },
+          { icon: '▶', text: 'Anim: Sleep' },
+          { icon: '▶', text: 'Anim: Wake' },
+          { icon: '→', text: 'Then → Idle.Default' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'Combat',
+    label: 'Combat',
+    x: 580, y: 340,
+    nodes: [
+      {
+        id: 'Combat.Default',
+        label: '.Default',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H,
+        items: [
+          { icon: '◈', text: 'Sensor: Damage check' },
+          { icon: '◈', text: 'Sensor: Detection' },
+          { icon: '→', text: 'Detect → .Chase' },
+        ]
+      },
+      {
+        id: 'Combat.Chase',
+        label: '.Chase',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H + nodeHeight([1,2,3]) + 12,
+        items: [
+          { icon: '⊛', text: 'Ref: Component_Intelligent_Chase' },
+          { icon: '⊛', text: 'Ref: Component_Soft_Leash' },
+          { icon: '⚔', text: 'Attack when close' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ReturnHome',
+    label: 'ReturnHome',
+    x: 920, y: 200,
+    nodes: [
+      {
+        id: 'ReturnHome.Default',
+        label: '.Default',
+        rx: GROUP_PAD, ry: GROUP_PAD + HEADER_H,
+        items: [
+          { icon: '⊙', text: 'Seek home position' },
+          { icon: '⏱', text: 'Timeout 10s' },
+          { icon: '→', text: 'Arrived → Idle.Default' },
+        ]
+      }
+    ]
+  }
+];
+
+// Transitions: source node id, target node id, label, internal flag
+const transitions = [
+  // Cross-group
+  { from: 'Idle.Default',       to: 'Sleep.Default',        label: '20%',             internal: false },
+  { from: 'Sleep.Default',      to: 'Idle.Default',         label: 'timeout',         internal: false },
+  { from: 'Idle.Guard',         to: 'Combat.Default',       label: 'player detected', internal: false },
+  { from: 'Combat.Chase',       to: 'ReturnHome.Default',   label: 'leash exceeded',  internal: false },
+  { from: 'ReturnHome.Default', to: 'Idle.Default',         label: 'arrived',         internal: false },
+  // Internal — Idle
+  { from: 'Idle.Default',       to: 'Idle.Guard',           label: '80%',             internal: true  },
+  { from: 'Idle.Guard',         to: 'Idle.Default',         label: 'timeout',         internal: true  },
+  { from: 'Idle.Default',       to: 'Idle.FindFood',        label: 'rare',            internal: true  },
+  { from: 'Idle.FindFood',      to: 'Idle.Default',         label: 'done',            internal: true  },
+  // Internal — Combat
+  { from: 'Combat.Default',     to: 'Combat.Chase',         label: 'detected',        internal: true  },
+];
+
+// ─── Layout helpers ──────────────────────────────────────────────────────────
+
+function groupDimensions(group) {
+  let maxX = 0, maxY = 0;
+  for (const node of group.nodes) {
+    const h = nodeHeight(node.items);
+    maxX = Math.max(maxX, node.rx + NODE_W);
+    maxY = Math.max(maxY, node.ry + h);
+  }
+  return { w: maxX + GROUP_PAD, h: maxY + GROUP_PAD };
+}
+
+// World position of a node's center (for arrow routing)
+function nodeWorldCenter(nodeId) {
+  for (const group of groups) {
+    for (const node of group.nodes) {
+      if (node.id === nodeId) {
+        const h = nodeHeight(node.items);
+        return {
+          x: group.x + node.rx + NODE_W / 2,
+          y: group.y + node.ry + h / 2,
+          top:    { x: group.x + node.rx + NODE_W / 2, y: group.y + node.ry },
+          bottom: { x: group.x + node.rx + NODE_W / 2, y: group.y + node.ry + h },
+          left:   { x: group.x + node.rx,              y: group.y + node.ry + h / 2 },
+          right:  { x: group.x + node.rx + NODE_W,     y: group.y + node.ry + h / 2 },
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function groupOfNode(nodeId) {
+  for (const group of groups) {
+    for (const node of group.nodes) {
+      if (node.id === nodeId) return group.id;
+    }
+  }
+  return null;
+}
+
+// ─── SVG helpers ─────────────────────────────────────────────────────────────
+
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function txt(str, attrs, parent) {
+  const e = el('text', attrs, parent);
+  e.textContent = str;
+  return e;
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+
+const worldEl      = document.getElementById('world');
+const arrowLayer   = document.getElementById('arrow-layer');
+const svgEl        = document.getElementById('main-svg');
+const gridBgEl     = document.getElementById('world-bg').querySelector('rect');
+
+// Keep rendered element refs so we can hide/show arrows efficiently
+let arrowEls = []; // { el: pathEl, labelGroup: g, internal: bool }
+
+function renderAll() {
+  worldEl.innerHTML = '';
+  arrowLayer.innerHTML = '';
+  arrowEls = [];
+
+  // Render groups
+  for (const group of groups) {
+    renderGroup(group);
+  }
+
+  // Render arrows
+  for (const tr of transitions) {
+    renderArrow(tr);
+  }
+
+  applyCamera();
+  updateArrowVisibility();
+}
+
+function renderGroup(group) {
+  const color = GROUP_COLORS[group.id];
+  const { w, h } = groupDimensions(group);
+
+  const g = el('g', {}, worldEl);
+  group._el = g;
+
+  // Outer rounded rect
+  el('rect', {
+    x: group.x, y: group.y, width: w, height: h,
+    rx: 12, ry: 12,
+    fill: '#252525',
+    stroke: color.stroke,
+    'stroke-width': 1.5,
+    'stroke-opacity': 0.6,
+  }, g);
+
+  // Header bar (clip top corners via separate rect + clip, or just use a slightly overlapping rect)
+  el('rect', {
+    x: group.x, y: group.y, width: w, height: HEADER_H,
+    rx: 10, ry: 10,
+    fill: color.header,
+  }, g);
+  // Fix bottom corners of header (not rounded)
+  el('rect', {
+    x: group.x, y: group.y + HEADER_H - 8, width: w, height: 8,
+    fill: color.header,
+  }, g);
+
+  txt(group.label, {
+    x: group.x + 14,
+    y: group.y + HEADER_H / 2,
+    class: 'group-label',
+    fill: '#fff',
+    'font-size': 13,
+    'font-weight': 700,
+    'dominant-baseline': 'middle',
+  }, g);
+
+  // Make group draggable (drag the whole group when clicking on header or background — not on nodes)
+  g.setAttribute('cursor', 'default');
+  makeDraggable(g, group, null);
+
+  // Render sub-nodes
+  for (const node of group.nodes) {
+    renderNode(group, node, color, g);
+  }
+}
+
+function renderNode(group, node, color, parent) {
+  const h = nodeHeight(node.items);
+  const absX = group.x + node.rx;
+  const absY = group.y + node.ry;
+
+  const g = el('g', { cursor: 'grab' }, parent);
+  node._el = g;
+
+  el('rect', {
+    x: absX, y: absY, width: NODE_W, height: h,
+    rx: 7, ry: 7,
+    fill: '#1a1a1a',
+    stroke: color.stroke,
+    'stroke-width': 1,
+    'stroke-opacity': 0.5,
+  }, g);
+
+  txt(node.label, {
+    x: absX + 10, y: absY + 9,
+    'font-size': 12, 'font-weight': 700,
+    fill: '#e8e8e8', 'dominant-baseline': 'hanging',
+    'pointer-events': 'none',
+  }, g);
+
+  const divY = absY + TITLE_H;
+  el('line', {
+    x1: absX + 6, y1: divY, x2: absX + NODE_W - 6, y2: divY,
+    stroke: '#333', 'stroke-width': 1,
+  }, g);
+
+  for (let i = 0; i < node.items.length; i++) {
+    const item = node.items[i];
+    const iy = divY + DIVIDER + i * ITEM_H;
+
+    txt(item.icon, {
+      x: absX + 8, y: iy,
+      'font-size': 10, fill: '#666', 'dominant-baseline': 'hanging',
+      'pointer-events': 'none',
+    }, g);
+
+    txt(item.text, {
+      x: absX + 22, y: iy,
+      'font-size': 11, fill: '#aaa', 'dominant-baseline': 'hanging',
+      'pointer-events': 'none',
+    }, g);
+  }
+
+  makeNodeDraggable(g, group, node);
+}
+
+function renderArrow(tr) {
+  const fromPos = nodeWorldCenter(tr.from);
+  const toPos   = nodeWorldCenter(tr.to);
+  if (!fromPos || !toPos) return;
+
+  const fromGroup = groupOfNode(tr.from);
+  const toGroup   = groupOfNode(tr.to);
+  const color     = tr.internal ? INTERNAL_COLOR : GROUP_COLORS[fromGroup].arrow;
+  const marker    = tr.internal ? INTERNAL_MARKER : GROUP_COLORS[fromGroup].marker;
+
+  // Choose best exit/entry points
+  let start, end, cp1, cp2;
+
+  if (tr.internal) {
+    // Internal: both nodes in same group, use left/right
+    if (fromPos.x < toPos.x) {
+      start = fromPos.right;
+      end   = toPos.left;
+    } else if (fromPos.x > toPos.x) {
+      start = fromPos.left;
+      end   = toPos.right;
+    } else {
+      // Vertically aligned
+      start = fromPos.bottom;
+      end   = toPos.top;
+    }
+    const dx = Math.abs(end.x - start.x) * 0.5 || 60;
+    cp1 = { x: start.x + (end.x > start.x ? dx : -dx), y: start.y };
+    cp2 = { x: end.x   - (end.x > start.x ? dx : -dx), y: end.y   };
+  } else {
+    // Cross-group: pick smart ports
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      if (dx > 0) { start = fromPos.right; end = toPos.left;  }
+      else        { start = fromPos.left;  end = toPos.right; }
+      const ddx = Math.abs(end.x - start.x) * 0.45;
+      cp1 = { x: start.x + (dx > 0 ? ddx : -ddx), y: start.y };
+      cp2 = { x: end.x   - (dx > 0 ? ddx : -ddx), y: end.y   };
+    } else {
+      if (dy > 0) { start = fromPos.bottom; end = toPos.top;    }
+      else        { start = fromPos.top;    end = toPos.bottom; }
+      const ddy = Math.abs(end.y - start.y) * 0.45;
+      cp1 = { x: start.x, y: start.y + (dy > 0 ? ddy : -ddy) };
+      cp2 = { x: end.x,   y: end.y   - (dy > 0 ? ddy : -ddy) };
+    }
+  }
+
+  const d = `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
+
+  const pathEl = el('path', {
+    d, fill: 'none',
+    stroke: color, 'stroke-width': tr.internal ? 1.3 : 1.8,
+    'stroke-opacity': tr.internal ? 0.55 : 0.85,
+    'marker-end': `url(#${marker})`,
+    'stroke-dasharray': tr.internal ? '4,3' : 'none',
+  }, arrowLayer);
+
+  // Label — cubic bezier midpoint at t=0.5: B(0.5) = 0.125*P0 + 0.375*CP1 + 0.375*CP2 + 0.125*P3
+  const lx = 0.125 * start.x + 0.375 * cp1.x + 0.375 * cp2.x + 0.125 * end.x;
+  const ly = 0.125 * start.y + 0.375 * cp1.y + 0.375 * cp2.y + 0.125 * end.y;
+
+  const labelG = el('g', {}, arrowLayer);
+
+  const labelBg = el('rect', {
+    rx: 3, ry: 3,
+    fill: '#1a1a1a',
+    stroke: color,
+    'stroke-width': 0.75,
+    'stroke-opacity': 0.5,
+    'fill-opacity': 0.9,
+  }, labelG);
+
+  const labelTxt = el('text', {
+    x: lx, y: ly,
+    'font-size': 10,
+    fill: color,
+    'dominant-baseline': 'middle',
+    'text-anchor': 'middle',
+    'pointer-events': 'none',
+    'font-family': 'Segoe UI, system-ui, sans-serif',
+  }, labelG);
+  labelTxt.textContent = tr.label;
+
+  // Position bg after text renders (approximate since SVG bbox not available without paint)
+  const approxW = tr.label.length * 5.8 + 8;
+  labelBg.setAttribute('x', lx - approxW / 2);
+  labelBg.setAttribute('y', ly - 8);
+  labelBg.setAttribute('width', approxW);
+  labelBg.setAttribute('height', 16);
+
+  tr._pathEl    = pathEl;
+  tr._labelG    = labelG;
+  tr._startPos  = start;
+  tr._endPos    = end;
+  tr._cp1       = cp1;
+  tr._cp2       = cp2;
+  tr._color     = color;
+  tr._marker    = marker;
+
+  arrowEls.push({ pathEl, labelG, internal: tr.internal });
+}
+
+// ─── Camera ──────────────────────────────────────────────────────────────────
+
+function applyCamera() {
+  const t = `translate(${camX}, ${camY}) scale(${camScale})`;
+  worldEl.setAttribute('transform', t);
+  arrowLayer.setAttribute('transform', t);
+  document.getElementById('world-bg').setAttribute('transform', t);
+}
+
+// ─── Dragging ────────────────────────────────────────────────────────────────
+
+let drag = null;
+
+// Group drag (header / empty space in group bg)
+function makeDraggable(el, group, node) {
+  el.addEventListener('mousedown', (e) => {
+    if (e.target.closest && e.target.closest('[data-node-drag]')) return;
+    e.stopPropagation();
+    drag = { type: 'group', group, startX: e.clientX, startY: e.clientY, origX: group.x, origY: group.y };
+  });
+}
+
+// Node drag
+function makeNodeDraggable(el, group, node) {
+  el.setAttribute('data-node-drag', 'true');
+  el.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    drag = { type: 'node', group, node, startX: e.clientX, startY: e.clientY, origRx: node.rx, origRy: node.ry };
+  });
+}
+
+// Canvas pan
+const container = document.getElementById('canvas-container');
+
+container.addEventListener('mousedown', (e) => {
+  if (e.button === 0 && !drag) {
+    drag = { type: 'pan', startX: e.clientX, startY: e.clientY, origCX: camX, origCY: camY };
+    container.classList.add('panning');
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!drag) return;
+  const dx = (e.clientX - drag.startX) / camScale;
+  const dy = (e.clientY - drag.startY) / camScale;
+
+  if (drag.type === 'pan') {
+    camX = drag.origCX + (e.clientX - drag.startX);
+    camY = drag.origCY + (e.clientY - drag.startY);
+    applyCamera();
+  } else if (drag.type === 'group') {
+    drag.group.x = drag.origX + dx;
+    drag.group.y = drag.origY + dy;
+    refreshPositions();
+  } else if (drag.type === 'node') {
+    const { group, node } = drag;
+    const { w, h } = groupDimensions(group);
+    const minRx = GROUP_PAD;
+    const minRy = GROUP_PAD + HEADER_H;
+    const maxRx = w - NODE_W - GROUP_PAD;
+    const maxRy = h - nodeHeight(node.items) - GROUP_PAD;
+    node.rx = Math.max(minRx, Math.min(maxRx, drag.origRx + dx));
+    node.ry = Math.max(minRy, drag.origRy + dy);
+    refreshPositions();
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  drag = null;
+  container.classList.remove('panning');
+});
+
+// ─── Refresh positions without full re-render ─────────────────────────────────
+
+function refreshPositions() {
+  // Re-render is simpler for this wireframe — just do full re-render
+  renderAll();
+}
+
+// ─── Zoom ─────────────────────────────────────────────────────────────────────
+
+container.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.91;
+  const rect   = container.getBoundingClientRect();
+  const mx     = e.clientX - rect.left;
+  const my     = e.clientY - rect.top;
+
+  camX = mx - (mx - camX) * factor;
+  camY = my - (my - camY) * factor;
+  camScale = Math.min(4, Math.max(0.15, camScale * factor));
+  applyCamera();
+}, { passive: false });
+
+// ─── Toggles ─────────────────────────────────────────────────────────────────
+
+function updateArrowVisibility() {
+  for (const a of arrowEls) {
+    let visible = showTransitions;
+    if (a.internal && !showInternal) visible = false;
+    const v = visible ? '' : 'none';
+    a.pathEl.style.display  = v;
+    a.labelG.style.display  = v;
+  }
+}
+
+function toggleTransitions() {
+  showTransitions = !showTransitions;
+  const btn = document.getElementById('btn-transitions');
+  btn.classList.toggle('active', showTransitions);
+  updateArrowVisibility();
+}
+
+function toggleInternal() {
+  showInternal = !showInternal;
+  const btn = document.getElementById('btn-internal');
+  btn.classList.toggle('active', showInternal);
+  updateArrowVisibility();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+// Center camera so the content is roughly centered on load
+function initCamera() {
+  const viewW = window.innerWidth;
+  const viewH = window.innerHeight;
+  camScale = 0.88;
+  camX = (viewW - 1200 * camScale) / 2;
+  camY = (viewH - 600 * camScale) / 2;
+}
+
+initCamera();
+renderAll();
+</script>
+</body>
+</html>

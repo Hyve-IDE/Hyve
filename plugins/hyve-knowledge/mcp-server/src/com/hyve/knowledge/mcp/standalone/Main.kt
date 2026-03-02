@@ -1,6 +1,7 @@
 // Copyright 2026 Hyve. All rights reserved.
 package com.hyve.knowledge.mcp.standalone
 
+import com.hyve.knowledge.core.config.ConfigFileWatcher
 import com.hyve.knowledge.core.db.Corpus
 import com.hyve.knowledge.core.db.KnowledgeDatabase
 import com.hyve.knowledge.core.index.CorpusIndexManager
@@ -14,9 +15,12 @@ fun main() {
 
     // 1. Load config
     log.info("Loading configuration...")
-    val config = McpConfig.load()
+    var config = McpConfig.load()
     log.info("Embedding provider: ${config.embeddingProvider}")
     log.info("Index path: ${config.resolvedIndexPath().absolutePath}")
+    if (config.activeVersion.isNotBlank()) {
+        log.info("Active version: ${config.activeVersion}")
+    }
 
     // 2. Validate knowledge.db exists
     val dbFile = File(config.resolvedIndexPath(), "knowledge.db")
@@ -28,8 +32,8 @@ fun main() {
 
     // 3. Initialize search stack
     log.info("Opening knowledge database: ${dbFile.absolutePath}")
-    val db = KnowledgeDatabase.forFile(dbFile, log)
-    val indexManager = CorpusIndexManager(config, log)
+    var db = KnowledgeDatabase.forFile(dbFile, log)
+    var indexManager = CorpusIndexManager(config, log)
 
     // 4. Check HNSW indices per corpus (warn, don't fail)
     for (corpus in Corpus.entries) {
@@ -43,10 +47,42 @@ fun main() {
 
     val searchService = KnowledgeSearchService(db, indexManager, log)
 
-    // 5. Create and run MCP server
+    // 5. Start config file watcher for hot-swap
+    val configWatcher = ConfigFileWatcher(
+        file = McpConfig.configFilePath(),
+        pollIntervalMs = 5000,
+        log = log,
+    ) {
+        try {
+            val newConfig = McpConfig.load()
+            if (newConfig.activeVersion != config.activeVersion) {
+                log.info("Active version changed: ${config.activeVersion} -> ${newConfig.activeVersion}")
+                val newDbFile = File(newConfig.resolvedIndexPath(), "knowledge.db")
+                if (newDbFile.exists()) {
+                    val oldDb = db
+                    db = KnowledgeDatabase.forFile(newDbFile, log)
+                    indexManager = CorpusIndexManager(newConfig, log)
+                    searchService.reinitialize(db, indexManager)
+                    oldDb.close()
+                    config = newConfig
+                    log.info("Hot-swapped to version: ${newConfig.activeVersion.ifBlank { "(legacy)" }}")
+                } else {
+                    log.warn("New version database not found at: ${newDbFile.absolutePath}, staying on current version")
+                }
+            } else {
+                config = newConfig
+            }
+        } catch (e: Exception) {
+            log.warn("Config reload failed: ${e.message}")
+        }
+    }
+    configWatcher.start()
+
+    // 6. Create and run MCP server
     val server = HytaleKnowledgeServer(searchService)
     Runtime.getRuntime().addShutdownHook(Thread {
         log.info("Shutting down...")
+        configWatcher.stop()
         searchService.close()
         db.close()
     })
