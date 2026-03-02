@@ -52,6 +52,7 @@ class HytaleKnowledgeServer(
             gamedataStatsTool(),
             docsStatsTool(),
             diffVersionsTool(),
+            getFilePathTool(),
         ))
 
         return server
@@ -320,6 +321,52 @@ class HytaleKnowledgeServer(
         }
     }
 
+    private fun getFilePathTool(): RegisteredTool {
+        val tool = Tool(
+            name = "get_hytale_file_path",
+            description = "Resolve a class name, method name, or file path fragment to the absolute file path " +
+                "of the decompiled Hytale source file on disk. Use this when you already know what you're looking for " +
+                "and want to read the full file directly instead of doing a semantic search. " +
+                "Returns file paths that you can then read with your standard file tools.",
+            inputSchema = toolSchema(
+                "query" to propString("Class name, method name, or file path fragment to look up (e.g., 'PlayerEntity', 'ItemRegistry', 'combat/Damage')"),
+                "limit" to propInt("Maximum results to return (default 10, max 50)"),
+                required = listOf("query"),
+            ),
+        )
+        return RegisteredTool(tool) { request ->
+            val query = request.arguments?.getString("query") ?: return@RegisteredTool errorResult("Missing 'query' parameter")
+            val limit = request.arguments?.getInt("limit") ?: 10
+            try {
+                val results = searchService.lookupFilePaths(query, limit.coerceIn(1, 50))
+                if (results.isEmpty()) {
+                    return@RegisteredTool successResult(buildJsonObject {
+                        put("query", query)
+                        put("resultCount", 0)
+                        put("results", buildJsonArray {})
+                        put("hint", "No matches found. Try a shorter or different name fragment.")
+                    }.let { json.encodeToString(it) })
+                }
+                val obj = buildJsonObject {
+                    put("query", query)
+                    put("resultCount", results.size)
+                    put("results", buildJsonArray {
+                        for (r in results) {
+                            add(buildJsonObject {
+                                put("displayName", r.displayName)
+                                put("filePath", r.filePath)
+                                put("nodeType", r.nodeType)
+                            })
+                        }
+                    })
+                }
+                successResult(json.encodeToString(obj))
+            } catch (e: Exception) {
+                errorResult("File lookup failed: ${e.message}")
+            }
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
 
     private fun encodeSearchResults(query: String, results: List<SearchResult>): String {
@@ -394,7 +441,7 @@ class HytaleKnowledgeServer(
         (this[key] as? JsonPrimitive)?.contentOrNull
 
     private fun Map<String, JsonElement>.getInt(key: String): Int? =
-        (this[key] as? JsonPrimitive)?.intOrNull
+        (this[key] as? JsonPrimitive)?.let { it.intOrNull ?: it.doubleOrNull?.toInt() }
 
     private fun Map<String, JsonElement>.getBool(key: String): Boolean? =
         (this[key] as? JsonPrimitive)?.booleanOrNull

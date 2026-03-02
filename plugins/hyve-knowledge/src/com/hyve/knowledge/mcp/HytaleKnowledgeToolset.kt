@@ -208,6 +208,39 @@ class HytaleKnowledgeToolset : McpToolset {
         return DiffExporter.toMarkdown(diff)
     }
 
+    // ── File Path Lookup ───────────────────────────────────────
+
+    @McpTool
+    @McpDescription("""
+        |Resolve a class name, method name, or file path fragment to the absolute file path
+        |of the decompiled Hytale source file on disk. Use this when you already know what
+        |you're looking for and want to read the full file directly instead of doing a
+        |semantic search. Returns file paths that you can then read with your standard file tools.
+    """)
+    suspend fun get_hytale_file_path(
+        @McpDescription("Class name, method name, or file path fragment to look up (e.g., 'PlayerEntity', 'ItemRegistry', 'combat/Damage')") query: String,
+        @McpDescription("Maximum results to return (default 10, max 50)") limit: Int = 10,
+    ): String {
+        val results = searchService.lookupFilePaths(query, limit.coerceIn(1, 50))
+        val obj = buildJsonObject {
+            put("query", query)
+            put("resultCount", results.size)
+            put("results", buildJsonArray {
+                for (r in results) {
+                    add(buildJsonObject {
+                        put("displayName", r.displayName)
+                        put("filePath", r.filePath)
+                        put("nodeType", r.nodeType)
+                    })
+                }
+            })
+            if (results.isEmpty()) {
+                put("hint", "No matches found. Try a shorter or different name fragment.")
+            }
+        }
+        return json.encodeToString(obj)
+    }
+
     // ── Helpers ──────────────────────────────────────────────────
 
     private fun encodeSearchResults(query: String, results: List<SearchResult>): String {

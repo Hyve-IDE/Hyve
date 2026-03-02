@@ -416,7 +416,41 @@ class KnowledgeSearchService(
         return results.firstOrNull()
     }
 
+    /**
+     * Looks up nodes by display name or file path (case-insensitive LIKE match).
+     * Returns distinct file paths for matching code-corpus nodes.
+     */
+    fun lookupFilePaths(nameQuery: String, limit: Int = 20): List<FilePathResult> {
+        val pattern = "%${nameQuery}%"
+        return db.query(
+            """
+            SELECT DISTINCT display_name, file_path, node_type, corpus
+            FROM nodes
+            WHERE corpus = 'code'
+              AND file_path IS NOT NULL
+              AND (display_name LIKE ? OR file_path LIKE ?)
+            ORDER BY
+                CASE WHEN display_name LIKE ? THEN 0 ELSE 1 END,
+                display_name
+            LIMIT ?
+            """.trimIndent(),
+            pattern, pattern, pattern, limit,
+        ) { rs ->
+            FilePathResult(
+                displayName = rs.getString("display_name"),
+                filePath = rs.getString("file_path"),
+                nodeType = rs.getString("node_type"),
+            )
+        }
+    }
+
     fun close() {
         indexManager.closeAll()
     }
 }
+
+data class FilePathResult(
+    val displayName: String,
+    val filePath: String,
+    val nodeType: String,
+)
